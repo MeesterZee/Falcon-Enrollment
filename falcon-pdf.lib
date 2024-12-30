@@ -49,7 +49,7 @@
 
   function createAdmissionContract() {
     // Convert Registration Fee to float and perform calculations
-    const registrationFeeStr = SETTINGS['Registration Fee'].replace('$', '');
+    const registrationFeeStr = APP_SETTINGS.feeSettings.registrationFee.replace('$', '');
     const registrationFee = parseFloat(registrationFeeStr);
     const partialRegistrationFee = registrationFee / 2;
     const formattedFee = `$${partialRegistrationFee.toFixed(2)}`;
@@ -74,9 +74,9 @@
         },
         {
           ol: [
-            { text: 'I agree to pay tuition charges, registration fees, applicable daycare program charges and other fees established by the First Lutheran School Board for the duration of enrollment. If, during enrollment, I wish to register, add or deduct daycare hours or discontinue daycare, I must notify both the FLASH program director or be responsible for the charges incurred. I agree to pay any fees incurred through Blackbaud Tuition Management for late or failed payments. I understand that the fees for registration and screenings for enrollment are non-refundable. Any deviation from the established payment schedule must be appealed in writing and approved by the FLS Managing Director. If I choose to withdraw my student(s), two weeks written notice is required. When the notice is given, a ' + SETTINGS['Withdrawal Processing Fee'] + ' withdrawal processing fee and any other fees owed will be subtracted from the unused paid tuition.', margin: [0, 0, 0, 5] },
-            { text: 'I agree to pay the annual Help Us Grow (HUG) building fee of ' + SETTINGS['HUG Fee'] + ' per family.', margin: [0, 0, 0, 5] },
-            { text: 'I agree to pay the annual Family Commitment Fee (FCF) of ' + SETTINGS['Family Commitment Fee'] + ' or to work the appropriate number of hours as delineated by the First Lutheran School Board policy.', margin: [0, 0, 0, 5] },
+            { text: 'I agree to pay tuition charges, registration fees, applicable daycare program charges and other fees established by the First Lutheran School Board for the duration of enrollment. If, during enrollment, I wish to register, add or deduct daycare hours or discontinue daycare, I must notify both the FLASH program director or be responsible for the charges incurred. I agree to pay any fees incurred through Blackbaud Tuition Management for late or failed payments. I understand that the fees for registration and screenings for enrollment are non-refundable. Any deviation from the established payment schedule must be appealed in writing and approved by the FLS Managing Director. If I choose to withdraw my student(s), two weeks written notice is required. When the notice is given, a ' + APP_SETTINGS.feeSettings.withdrawalFee + ' withdrawal processing fee and any other fees owed will be subtracted from the unused paid tuition.', margin: [0, 0, 0, 5] },
+            { text: 'I agree to pay the annual Help Us Grow (HUG) building fee of ' + APP_SETTINGS.feeSettings.hugFee + ' per family.', margin: [0, 0, 0, 5] },
+            { text: 'I agree to pay the annual Family Commitment Fee (FCF) of ' + APP_SETTINGS.feeSettings.familyCommitmentFee + ' or to work the appropriate number of hours as delineated by the First Lutheran School Board policy.', margin: [0, 0, 0, 5] },
             { text: 'I understand that as a condition of continued attendance each student is required to abide by school regulations as explained in the First Lutheran Parent Handbook and/or as presented by the teachers and administration.', margin: [0, 0, 0, 5] },
             { text: 'I understand this contract begins continual enrollment that ends at any of the following:' },
             {
@@ -92,7 +92,7 @@
         {
           start: 6, // Explicitly set numbering to continue after ul
           ol: [
-            { text: 'I understand that by signing this contract my Blackbaud Tuition Management account will be invoiced ' + formattedFee + ' each April and ' + formattedFee + ' each June (for a total of ' + SETTINGS['Registration Fee'] + ' per student) for the annual registration fee. If I choose not to continue the following year, I understand I need to let the school office know in writing by March 10th in order to avoid being charged the registration fee for the coming year. After March 10th, the registration fee is non-refundable. If a written notice to withdraw is not received, I understand my Blackbaud Tuition account will still be invoiced ' + formattedFee + ' in April.', margin: [0, 0, 0, 5] },
+            { text: 'I understand that by signing this contract my Blackbaud Tuition Management account will be invoiced ' + formattedFee + ' each April and ' + formattedFee + ' each June (for a total of ' + APP_SETTINGS.feeSettings.registrationFee + ' per student) for the annual registration fee. If I choose not to continue the following year, I understand I need to let the school office know in writing by March 10th in order to avoid being charged the registration fee for the coming year. After March 10th, the registration fee is non-refundable. If a written notice to withdraw is not received, I understand my Blackbaud Tuition account will still be invoiced ' + formattedFee + ' in April.', margin: [0, 0, 0, 5] },
             { text: 'I understand that the first tuition payment is due August 10th and the last tuition payment is due May 10th each school year. Other fees including but not limited to hourly daycare and field trip fees may be due June 10th or July 10th.', margin: [0, 0, 0, 5] }
           ]
         },
@@ -293,7 +293,7 @@
           },
           layout: 'noBorders', margin: [0, 0, 0, 5]
         },
-        { text: 'Regardless of your payment method, choosing a monthly daycare option adds the cost to your tuition. A ' + SETTINGS['FLASH Processing Fee'] + ' processing fee will be charged after the second FLASH change request for the current year.', margin: [0, 0, 0, 5] },
+        { text: 'Regardless of your payment method, choosing a monthly daycare option adds the cost to your tuition. A ' + APP_SETTINGS.feeSettings.flashFee + ' processing fee will be charged after the second FLASH change request for the current year.', margin: [0, 0, 0, 5] },
         { text: 'Please select your FLASH needs:', bold: true, margin: [0, 0, 0, 5] },
         { 
           table: {
@@ -707,6 +707,142 @@
             ]
           },
           layout: FORM_FILL_LAYOUT,
+        }
+      ],
+      footer: function(currentPage, pageCount, pageSize) {
+        return FORM_FOOTER;
+      },
+      defaultStyle: {
+        fontSize: 9 // Set the default font size
+      },
+      styles: {
+        title: {
+          fontSize: 12,
+          bold: true,
+          alignment: 'center',
+          margin: [0, 116, 0, 10]
+        },
+      },
+      images: { logo: { url: FORM_LOGO } }
+    };
+
+    return docDefinition;
+  }
+
+  ////////////////////////
+  // TECHNOLOGY CONSENT //
+  ////////////////////////
+
+  function createTechnologyUseConsent() {
+    const docDefinition = {
+      pageSize: 'LETTER',
+      pageOrientation: 'portrait',
+      pageMargins: [36, 0, 36, 36],
+      header: function(currentPage, pageCount, pageSize) {
+        return FORM_HEADER;
+      },
+      content: [
+        { text: 'FIRST LUTHERAN SCHOOL - TECHNOLOGY USE CONSENT', style: 'title' },
+        { text: "At First Lutheran School, we integrate technology into our curriculum to enhance learning, creativity, and collaboration. With your permission, we will provide your student with a Google Workspace for Education account and access to school devices (iPads, Chromebooks, or computers in the computer lab) for educational purposes.", margin: [0, 0, 0, 5]},
+        { text: "Google Workspace for Education", bold: true },
+        { text: "Google Workspace for Education is a suite of educational tools from Google, including Gmail, Calendar, Docs, and Classroom, used worldwide by millions of students and teachers. Students at First Lutheran School use their accounts to complete assignments, communicate with teachers, access third-party educational platforms (such as Clever and Seesaw), and develop digital citizenship skills.", margin: [0, 0, 0, 5]},
+        {
+          text: [
+            "This Google account is essential for providing your student with a full range of learning opportunities at First Lutheran. Without it, access to critical resources and tools will be significantly limited. Google complies with privacy practices designed for K-12 education, as outlined in the Google Workspace for Education Privacy Notice: ",
+            {
+              text: "https://workspace.google.com/terms/education_privacy/",
+              decoration: 'underline'
+            },
+            "."
+          ],
+          margin: [0, 0, 0, 5]
+        },
+        { text: "School Device Usage", bold: true },
+        { text: "To facilitate a secure, focused, and effective learning environment, each student at First Lutheran School will have access to school-issued devices, including iPads, Chromebooks, and computers in the computer lab. These devices are designated for educational purposes during classroom hours only. They are managed by the school’s technology department and monitored by faculty to ensure safe and appropriate usage in line with school policies.", margin: [0, 0, 0, 5] },
+        { text: "Responsible Technology Use", bold: true },
+        { text: "To maintain a productive learning environment, students are expected to:" },
+        { ul: 
+          [
+            { text: "Communicate Respectfully: Use all digital tools respectfully with teachers and peers."},
+            { text: "Follow Appropriate Use: Use accounts and devices only for school-related activities."},
+            { text: "Practice Digital Citizenship: Engage responsibly online, respecting privacy and intellectual property rights."}
+          ], margin: [0, 0, 0, 7]
+        }, 
+        {
+          table: {
+            widths: ['auto', '*'],  // 'auto' for the box, '*' for the text
+            body: [
+              [
+                {
+                  canvas: [
+                    { type: 'rect', x: 0, y: 0, w: 8, h: 8, lineWidth: 1 }
+                  ],
+                  margin: [1, 1, 0, 0],
+                  fillColor: '#eeeeee'  // Small margin to align the box
+                },
+                {
+                  stack: [
+                    {
+                      text: "I hereby give permission for First Lutheran School to:",
+                      bold: true
+                    },
+                    {
+                      ul: [
+                        "Create and manage a Google Workspace for Education account for your student.",
+                        "Provide access to school devices for educational use.",
+                        "Allow Google and third-party services to collect and use information solely for educational purposes, per the Google Workspace for Education Privacy Notice.",
+                        "Maintain this consent for the duration of your student's enrollment at First Lutheran School."
+                      ]
+                    }
+                  ]
+                }
+              ]
+            ]
+          },
+          layout: {
+            fillColor: function(rowIndex, node, columnIndex) {
+              return (rowIndex === 0) ? '#eeeeee' : null;
+            },
+            hLineWidth: function() { return 0; },
+            vLineWidth: function() { return 0; }
+          },
+          margin: [0, 0, 0, 26]
+        },
+        {
+          table: {
+            widths: [170, 10, '*', 20, 170, 10, '*'],
+            body: [
+              [ 
+                { text: 'Student name', border: [false, true, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] }
+              ],
+              [ 
+                { text: 'Parent/guardian 1 name (print)', border: [false, true, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: 'Parent/guardian 2 name (print)', border: [false, true, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: '', border: [false, false, false, false] }
+              ],        
+              [ 
+                { text: 'Parent/guardian 1 name (signature)', border: [false, true, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: 'Date', border: [false, true, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: 'Parent/guardian 2 name (signature)', border: [false, true, false, false] },
+                { text: '', border: [false, false, false, false] },
+                { text: 'Date', border: [false, true, false, false] }
+              ],
+            ]
+          },
+          layout: FORM_FILL_LAYOUT,
+          margin: [0, 0, 0, 5]
         }
       ],
       footer: function(currentPage, pageCount, pageSize) {
