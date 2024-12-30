@@ -1,16 +1,52 @@
 <script type="text/javascript">
+  const STUDENT_KEY_MAPPINGS = {
+    // Basic information    
+    'gender': 'Gender', 'dateOfBirth': 'Date Of Birth', 'incomingGrade': 'Incoming Grade', 'gradeStatus': 'Grade Status', 'enrollmentManager': 'Enrollment Manager', 
+    
+    // Parent/guardian information
+    'parentGuardianName': 'Parent/Guardian Name', 'parentGuardianPhone': 'Parent/Guardian Phone', 'parentGuardianEmail': 'Parent/Guardian Email',
+
+    // School/teacher information
+    'currentSchoolName': 'Current School Name', 'currentTeacherName': 'Current Teacher Name', 'currentTeacherEmail': 'Current Teacher Email', 
+    
+    // EEC information
+    'enrolledInEEC': 'Enrolled In EEC',
+
+    // Student evaluation
+    'evaluationDueDate': 'Evaluation Due Date', 'evaluationEmail': 'Evaluation Email Sent', 
+    
+    // Student evaluation form
+    'evaluationForm': 'Evaluation Form', 
+    
+    // Student screening
+    'contactedToSchedule': 'Contacted To Schedule', 'screeningDate': 'Screening Date', 'screeningTime': 'Screening Time', 'screeningEmail': 'Screening Email Sent', 
+    
+    // Student screening documents
+    'reportCard': 'Report Card', 'iepDocumentation': 'IEP Documentation', 'screeningFee': 'Screening Fee', 
+    
+    // Student acceptance
+    'adminSubmissionDate': 'Admin Submission Date', 'adminAcceptance': 'Admin Acceptance', 'acceptanceDueDate': 'Acceptance Due Date', 'acceptanceEmail': 'Acceptance Email Sent', 'familyAcceptance': 'Family Acceptance',
+    
+    // Student acceptance documents
+    'blackbaudAccount': 'Blackbaud Account', 'birthCertificatePassport': 'Birth Certificate/Passport', 'immunizationRecords': 'Immunization Records', 'admissionContractForm': 'Admission Contract Form', 'tuitionPaymentForm': 'Tuition Payment Form', 'medicalConsentForm': 'Medical Consent Form', 'emergencyContactsForm': 'Emergency Contacts Form', 'techConsentForm': 'Technology Consent Form', 'registrationFee': 'Registration Fee',
+
+    // Notes
+    'notes': 'Notes'
+  };
+  
   // Global variables  
   let STUDENT_DATA;
-  let SETTINGS;
-  let DATA_SET = "active";
-  let previousStudent;
+  let APP_SETTINGS;
+
+  // Global IDs
+  let previousStudentID;
+  let cachedID = null;
   
   // Global flags
   let saveFlag = true; // True if all changes saved, false if unsaved changes
   let busyFlag = false; // True if operation in progress, false if no operation in progress
 
   // Initialize application
-  // Conversion to async allows for parallel data retrieval from Apps Script
   window.onload = async function() {
     console.log("Initializing dashboard...");
 
@@ -28,19 +64,15 @@
       // Fetch data in parallel
       const [studentData, settings] = await Promise.all([
         new Promise((resolve, reject) => {
-          if (DATA_SET === "archive") {
-            google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getArchiveData();
-          } else {
-            google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getActiveData();
-          }
+          google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getStudentData();
         }),
         new Promise((resolve, reject) => {
-          google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getSettings();
+          google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getAppSettings();
         })
       ]);
 
       // Assign data to global variables
-      SETTINGS = settings;
+      APP_SETTINGS = settings;
       STUDENT_DATA = studentData;
 
       // Initialize the dashboard
@@ -76,13 +108,11 @@
     document.getElementById('addStudentButton').addEventListener('click', addStudent);
     document.getElementById('removeStudentButton').addEventListener('click', removeStudent);
     document.getElementById('renameStudentButton').addEventListener('click', renameStudent);
-    document.getElementById('restoreStudentButton').addEventListener('click', restoreStudent);
+    document.getElementById('activateStudentButton').addEventListener('click', activateStudent);
     document.getElementById('deleteStudentButton').addEventListener('click', deleteStudent);
     document.getElementById('emailButton').addEventListener('click', composeEmail);
     document.getElementById('exportFormsButton').addEventListener('click', exportForms);
     document.getElementById('exportDataButton').addEventListener('click', exportData);
-    document.getElementById('archiveButton').addEventListener('click', toggleDataView);
-    document.getElementById('backButton').addEventListener('click', toggleDataView);
 
     // Dropdown event listeners
     document.querySelectorAll('.dropdown').forEach(dropdown => {
@@ -101,14 +131,45 @@
       });
     });
 
+    // Toggle data view button
+    const options = [
+      { text: "<i class='bi bi-eye'></i>Active", color: "var(--green)" },
+      { text: "<i class='bi bi-eye'></i>Archive", color: "var(--gray)" }
+    ];
+
+    // Initialize the button state
+    let currentIndex = 0;
+    const button = document.getElementById('toggleDataButton');
+    button.setAttribute('data-state', currentIndex);
+
+    button.addEventListener('click', () => {
+      if (busyFlag) {
+        showError("Error: OPERATION_IN_PROGRESS");
+        return;
+      }
+
+      if (!saveFlag) {
+        showError("Error: UNSAVED_CHANGES");
+        return;
+      }
+
+      // Update the index to the next option, cycling back to 0 if at the end
+      currentIndex = (currentIndex + 1) % options.length;
+
+      // Update the button text and background color
+      button.innerHTML = options[currentIndex].text;
+      button.style.backgroundColor = options[currentIndex].color;
+      button.setAttribute('data-state', currentIndex);
+      toggleDataView();
+    });
+
     // Add event listener for studentNameSelectBox
     const studentNameSelectBox = document.getElementById('studentName');
-
     studentNameSelectBox.addEventListener('change', function() {
       const currentStudent = studentNameSelectBox.value;
       if (!saveFlag) {
-        showError("unsavedChanges");
-        studentNameSelectBox.value = previousStudent;
+        showError("Error: UNSAVED_CHANGES");
+        studentNameSelectBox.value = previousStudentID;
       }
       else {
         updateStudentData(currentStudent);
@@ -116,40 +177,35 @@
     });
 
     // Add event listeners for select boxes
-    const selectIds = document.querySelectorAll('#gender, #incomingGradeLevel, #enrollmentManager, #gradeLevelStatus, #enrolledInEEC, #evaluationEmail, #studentEvaluationForm, #contactedToSchedule, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminAcceptance, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #registrationFee');
+    const selectColorElements = document.querySelectorAll('#gender, #incomingGrade, #enrollmentManager, #gradeStatus, #enrolledInEEC, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminAcceptance, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
+    const inputColorElements = document.querySelectorAll('#dateOfBirth, #parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail, #evaluationDueDate, #screeningDate, #screeningTime, #adminSubmissionDate, #acceptanceDueDate');
+    const noColorElements = document.querySelectorAll('#notes');
 
-    selectIds.forEach(selectBox => {
-      selectBox.addEventListener('change', () => {
-        selectBox.style.backgroundColor = getColor(selectBox.value);
+    selectColorElements.forEach(element => {
+      element.addEventListener('change', () => {
         saveAlert();
+        element.style.backgroundColor = getColor(element);
       });
     });
 
-    // Add event listeners for input boxes
-    const inputIds = document.querySelectorAll('#dateOfBirth, #parentGuardianName, #currentSchoolName, #currentTeacherName, #evaluationDueDate, #screeningDate, #screeningTime, #adminSubmissionDate, #acceptanceDueDate, #parentGuardianEmail, #currentTeacherEmail, #parentGuardianPhone, #enrollmentNotes');
-    const phonePattern = /^\(\d{3}\) \d{3}-\d{4}$/;
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    inputIds.forEach(input => {
-      input.addEventListener('input', () => {
+    inputColorElements.forEach(element => {
+      element.addEventListener('input', () => {
         saveAlert();
-        if (input.id === 'parentGuardianPhone') {
-          saveAlert();
-          formatPhoneNumber(input);
-          input.style.backgroundColor = phonePattern.test(input.value) ? getColor() : '';
-        } else if (input.id === 'parentGuardianEmail' || input.id === 'currentTeacherEmail') {
-          saveAlert();
-          input.style.backgroundColor = emailPattern.test(input.value) ? getColor() : '';
-        } else if (input.id === 'enrollmentNotes') {
-          saveAlert();
-        } else {
-          saveAlert();
-          input.style.backgroundColor = input.value.trim() !== '' ? getColor() : '';
+        element.style.backgroundColor = getColor(element);
+        if (element.id === 'parentGuardianPhone') {
+          formatPhoneNumber(element);
         }
       });
     });
 
-    // Allow deletion of select box entry, except for Student Name and modal selects
+    noColorElements.forEach(element => {
+      const eventType = element.tagName === 'SELECT' ? 'change' : 'input';
+      element.addEventListener(eventType, () => {
+        saveAlert();
+      });
+    });
+
+    // Highlight save changes with exceptions
     document.querySelectorAll("select:not(#studentName, #templateSelect, #formSelect, #dataTypeSelect, #fileTypeSelect)").forEach(function(select) {
       select.addEventListener("keydown", function(event) {
         if (event.key === "Backspace" || event.key === "Delete") {
@@ -174,91 +230,88 @@
       getEmailTemplate();
     });
 
+    // Add paste event listeners to rich text inputs
+    const richTextBoxes = document.querySelectorAll('.rich-text-box');
+    richTextBoxes.forEach(input => {
+      input.addEventListener("paste", function (event) {
+        // Prevent the default paste behavior
+        event.preventDefault();
+
+        // Get the plain text from the clipboard
+        const text = event.clipboardData.getData("text/plain");
+
+        // Insert the plain text at the cursor position
+        document.execCommand("insertText", false, text);
+      });
+    });
+
     // Profile search event listener
     const profileSearchInput = document.getElementById('profileSearch');
 
     profileSearchInput.addEventListener('keyup', () => {
       const filter = profileSearchInput.value.toLowerCase();
+      const toggleDataButton = document.getElementById('toggleDataButton');
+      const dataFilter = parseInt(toggleDataButton.getAttribute('data-state'), 10);
 
       // Clear the current options in the studentNameSelectBox
       while (studentNameSelectBox.firstChild) {
         studentNameSelectBox.removeChild(studentNameSelectBox.firstChild);
       }
 
-      // Filter the STUDENT_DATA based on the search input
-      const filteredStudents = STUDENT_DATA.filter(student => {
+      // Filter STUDENT_DATA based on the selected database
+      let filteredStudentData = STUDENT_DATA;
+
+      if (dataFilter === 0) {
+        filteredStudentData = STUDENT_DATA.filter(item => item['Status'] === 'Active');
+      } else if (dataFilter === 1) {
+        filteredStudentData = STUDENT_DATA.filter(item => item['Status'] === 'Archive');
+      }
+
+      // Further filter the already filteredStudentData based on the search input
+      const filteredStudents = filteredStudentData.filter(student => {
         return Object.keys(student).some(key => {
           if ([
             'Student Name',
-            'Gender', 
-            'Date Of Birth', 
-            'Incoming Grade Level', 
-            'Grade Level Status', 
-            'Enrollment Manager', 
-            'Parent/Guardian Name', 
-            'Parent/Guardian Phone', 
-            'Current School Name', 
-            'Current Teacher Name', 
-            'Current Teacher Email', 
+            'Gender',
+            'Date Of Birth',
+            'Incoming Grade',
+            'Grade Status',
+            'Enrollment Manager',
+            'Parent/Guardian Name',
+            'Parent/Guardian Phone',
+            'Current School Name',
+            'Current Teacher Name',
+            'Current Teacher Email',
             'Enrolled In EEC'
           ].includes(key)) {
             const value = student[key] ? student[key].toString().toLowerCase() : '';
-            const isMatch = value.includes(filter);
-        
-            // Log the key being checked and whether it matches
-            return isMatch;
+            return value.includes(filter);
           }
           return false;
         });
       });
 
-    // Populate the studentNameSelectBox with the filtered results
-    filteredStudents.forEach(student => {
-      const option = document.createElement('option');
-      option.value = student['Student Name'];
-      option.textContent = student['Student Name'];
-      studentNameSelectBox.appendChild(option);
+      // Populate the studentNameSelectBox with the filtered results
+      filteredStudents.forEach(student => {
+        const option = document.createElement('option');
+        option.value = student['Student ID'];
+        option.textContent = student['Student Name'];
+        studentNameSelectBox.appendChild(option);
+      });
+
+      if (filteredStudents.length === 0) {
+        const option = document.createElement('option');
+        option.value = '';
+        option.textContent = '';
+        studentNameSelectBox.appendChild(option);
+        updateStudentData("");
+      } else {
+        updateStudentData(filteredStudents[0]['Student ID']);
+      }
     });
 
-    if (filteredStudents.length === 0) {
-      const option = document.createElement('option');
-      option.value = '';
-      option.textContent = '';
-      studentNameSelectBox.appendChild(option);
-      updateStudentData("");
-    }
-    else {
-      updateStudentData(filteredStudents[0]['Student Name']);
-    }
-  });
     
     console.log("Complete!");
-  }
-
-  // Get select box/input box color based on value
-  function getColor(value) {
-    switch (value) {
-      case "Male":
-        return 'var(--blue)';
-      case "Female":
-        return 'var(--pink)';
-      case "Requested":
-      case "In Progress":
-      case "Pending":
-      case "In Review":
-        return 'var(--orange)';
-      case "Waitlist":
-      case "No":
-      case "Rejected":
-        return 'var(--red)';
-      case "N/A":
-      case "Non-binary":
-        return 'var(--gray)';
-      case "":
-        return '';
-      default:
-        return 'var(--green)';
-    }
   }
 
   function populateDashboard() {
@@ -267,11 +320,15 @@
     // Add enrollment manager options to dashboard and 'Add Student' modal
     const enrollmentManagerSelect = document.getElementById('enrollmentManager');
     const addEnrollmentManagerSelect = document.getElementById('addEnrollmentManager');
+    
+    // Iterate through enrollmentManager keys and populate select
     for (let i = 1; i <= 5; i++) {
-      let key = `Enrollment Manager ${i}`;
-      if (SETTINGS[key].trim() !== '') {
+      let key = `enrollmentManager${i}`;
+      let managerName = APP_SETTINGS.managerSettings[key];
+
+      if (managerName && managerName.trim() !== '') {
         let option = document.createElement('option');
-        option.text = SETTINGS[key];
+        option.text = managerName;
         enrollmentManagerSelect.add(option);
         addEnrollmentManagerSelect.add(option.cloneNode(true));
       }
@@ -286,7 +343,7 @@
     
     console.log("Complete!");
   }
-  
+
   /////////////////////
   // MODAL FUNCTIONS //
   /////////////////////
@@ -311,215 +368,223 @@
     });
   }
 
+  //////////////////////////////
+  // ACTIVE/ARCHIVE DATA VIEW //
+  //////////////////////////////
+
+  function toggleDataView() {
+    const toggleDataButton = document.getElementById('toggleDataButton');
+    const stateIndex = parseInt(toggleDataButton.getAttribute('data-state'), 10);
+    
+    switch (stateIndex) {
+      // Active data
+      case 0:
+        // Update the toolbar UI
+        document.getElementById('addStudentButton').style.display = "block";
+        document.getElementById('removeStudentButton').style.display = "block";
+        document.getElementById('activateStudentButton').style.display = "none";
+        document.getElementById('deleteStudentButton').style.display = "none";
+        document.getElementById('emailButton').style.display = "block";
+        break;
+
+      // Archive data
+      case 1:
+        // Update the toolbar UI
+        document.getElementById('addStudentButton').style.display = "none";
+        document.getElementById('removeStudentButton').style.display = "none";
+        document.getElementById('activateStudentButton').style.display = "block";
+        document.getElementById('deleteStudentButton').style.display = "block";
+        document.getElementById('emailButton').style.display = "none";
+        break;
+    }
+
+    updateStudentNames();
+  }
+
   //////////////////
   // SAVE PROFILE //
   //////////////////
 
   function saveProfile() {
-    const studentNameSelectBox = document.getElementById('studentName');
-    
     if (busyFlag) {
-      showError("operationInProgress");
+      showError("Error: OPERATION_IN_PROGRESS");
       return;
     }
 
+    const studentNameSelectBox = document.getElementById('studentName');
+
     if (studentNameSelectBox.options.length === 0) {
-      showError("missingData");
-      return true;
+      showError("Error: MISSING_STUDENT_DATA");
+      return;
     }
-    
-    const selectedStudent = studentNameSelectBox.value;
-    let toastMessage;
-    busyFlag = true;
 
-    let student = STUDENT_DATA.find(function(item) {
-      return item['Student Name'] === selectedStudent;
+    const selectedStudentID = studentNameSelectBox.value;
+    
+    // Create working copies
+    const tempStudentData = [...STUDENT_DATA];
+    const student = tempStudentData.find(item => item['Student ID'] === selectedStudentID);
+
+    // Update student data
+    Object.entries(STUDENT_KEY_MAPPINGS).forEach(([elementId, dataKey]) => {
+        const element = document.getElementById(elementId);
+        if (element) {
+            student[dataKey] = element.value;
+        }
     });
 
-    const elementKeyMappings = {
-      'gender': 'Gender', 'dateOfBirth': 'Date Of Birth', 'incomingGradeLevel': 'Incoming Grade Level', 'gradeLevelStatus': 'Grade Level Status', 'enrollmentManager': 'Enrollment Manager',
-      'parentGuardianName': 'Parent/Guardian Name', 'parentGuardianPhone': 'Parent/Guardian Phone', 'parentGuardianEmail': 'Parent/Guardian Email',
-      'currentSchoolName': 'Current School Name', 'currentTeacherName': 'Current Teacher Name', 'currentTeacherEmail': 'Current Teacher Email',
-      'enrolledInEEC': 'Enrolled In EEC',
-      'evaluationDueDate': 'Evaluation Due Date', 'evaluationEmail': 'Evaluation Email Sent',
-      'studentEvaluationForm': 'Evaluation Form',
-      'contactedToSchedule': 'Contacted To Schedule', 'screeningDate': 'Screening Date', 'screeningTime': 'Screening Time', 'screeningEmail': 'Screening Email Sent',
-      'reportCard': 'Report Card', 'iepDocumentation': 'IEP Documentation', 'screeningFee': 'Screening Fee',
-      'adminSubmissionDate': 'Admin Submission Date', 'adminAcceptance': 'Admin Acceptance', 'acceptanceDueDate': 'Acceptance Due Date', 'acceptanceEmail': 'Acceptance Email Sent', 'familyAcceptance': 'Family Acceptance',
-      'blackbaudAccount': 'Blackbaud Account', 'birthCertificatePassport': 'Birth Certificate/Passport',   'immunizationRecords': 'Immunization Records', 'admissionContractForm': 'Admission Contract Form',   'tuitionPaymentForm': 'Tuition Payment Form', 'medicalConsentForm': 'Medical Consent Form',  'emergencyContactsForm': 'Emergency Contacts Form', 'registrationFee': 'Registration Fee',
-      'enrollmentNotes': 'Enrollment Notes'
-    };
-
-    // Update STUDENT_DATA object with dashboard data
-    STUDENT_DATA.forEach((item) => {
-      if (item['Student Name'] === selectedStudent) {
-        Object.keys(elementKeyMappings).forEach((id) => {
-          const element = document.getElementById(id);
-          if (element) {
-            item[elementKeyMappings[id]] = element.id === 'enrollmentNotes' ? element.innerHTML : element.value;
-          }
-        });
-      }
-    });
-    
-    const dashboardDataArray = [[
-      selectedStudent,
-      ...Object.keys(elementKeyMappings).map(key => student[elementKeyMappings[key]]),
+    const studentDataArray = [[
+        student['Student ID'],
+        student['Status'],
+        student['Student Name'],
+        ...Object.keys(STUDENT_KEY_MAPPINGS).map(key => student[STUDENT_KEY_MAPPINGS[key]])
     ]];
+    
+    busyFlag = true;
+    showToast("", "Saving changes...", 5000);
 
-    // Update the state of 'Save Changes' button
-    const saveChangesButton = document.getElementById('saveChangesButton');
-    saveChangesButton.classList.remove('tool-bar-button-unsaved');
-    saveFlag = true;
-    
-    // Show save confirmation toast
-    google.script.run.withSuccessHandler(function(response) {
-      if (response === "duplicateDatabaseEntry") {
-        showError("duplicateDatabaseEntry");
-      } 
-      else if (response === "missingDatabaseEntry") {
-        showError("missingDatabaseEntry");
-      } 
-      else {
-        toastMessage = "'" + selectedStudent + "' saved successfully!";
+    google.script.run
+      .withSuccessHandler(() => {
+        STUDENT_DATA = tempStudentData;
+        document.getElementById('saveChangesButton').classList.remove('tool-bar-button-unsaved');
+               
+        showToast("", `'${student['Student Name']}' saved successfully!`, 5000);
         playNotificationSound("success");
-        showToast("", toastMessage, 5000);
-      }
-      busyFlag = false;
-    }).saveStudentData(DATA_SET, dashboardDataArray);
-    
-    toastMessage = "Saving changes...";
-    showToast("", toastMessage, 5000);
+
+        saveFlag = true;
+        busyFlag = false;
+      })
+      .withFailureHandler((error) => {
+        const errorString = String(error);
+        
+        if (errorString.includes("401")) {
+          sessionError();
+        }
+        else if (errorString.includes("permission")) {
+          showError("Error: PERMISSION");
+        }
+        else {
+          showError(error.message);
+        }
+        saveFlag = true;
+        busyFlag = false;
+      })
+    .saveStudentData(studentDataArray);
   }
 
   /////////////////
   // ADD STUDENT //
   /////////////////
 
-  function addStudent() {
-    // Show error and prevent Add Student if there are unsaved changes
-    if (!saveFlag) {
-      showError("unsavedChanges");
+  async function addStudent() {
+    if (busyFlag) {
+      showError("Error: OPERATION_IN_PROGRESS");
       return;
     }
 
-    if (busyFlag) {
-      showError("operationInProgress");
+    if (!saveFlag) {
+      showError("Error: UNSAVED_CHANGES");
       return;
     }
-    
-    showHtmlModal("addStudentModal")
+
+    showHtmlModal("addStudentModal");
+
     const addStudentModalButton = document.getElementById("addStudentModalButton");
-    
-    addStudentModalButton.onclick = function() {
-      busyFlag = true;
-      
+
+    addStudentModalButton.onclick = async function() {
       if (addStudentErrorCheck()) {
-        busyFlag = false;
         return;
       }
-      else {
-        // If no errors, get the data from the 'Add Student' modal
-        const firstName = document.getElementById('addFirstName').value;
-        const lastName = document.getElementById('addLastName').value;
-        const studentName = lastName + ", " + firstName;
-        const newStudent = {
-          'Student Name': studentName,
-          'Gender': document.getElementById('addGender').value,
-          'Date Of Birth': document.getElementById('addDateOfBirth').value,
-          'Incoming Grade Level': document.getElementById('addIncomingGradeLevel').value,
-          'Grade Level Status': document.getElementById('addGradeLevelStatus').value,
-          'Enrollment Manager': document.getElementById('addEnrollmentManager').value,
-          'Parent/Guardian Name': document.getElementById('addParentGuardianName').value,
-          'Parent/Guardian Phone': document.getElementById('addParentGuardianPhone').value,
-          'Parent/Guardian Email': document.getElementById('addParentGuardianEmail').value,
-          'Current School Name': document.getElementById('addCurrentSchoolName').value,
-          'Current Teacher Name': document.getElementById('addCurrentTeacherName').value,
-          'Current Teacher Email': document.getElementById('addCurrentTeacherEmail').value,
-          'Enrolled In EEC': document.getElementById('addEnrolledInEEC').value
-        };
 
-        // Check for duplicate student
-        let duplicateStudent = false;
-
-        for (let i = 0; i < STUDENT_DATA.length; i++) {
-          if (STUDENT_DATA[i]['Student Name'] === newStudent['Student Name']) {
-            duplicateStudent = true;
-            break;
-          }
-        }
-
-        // Exit the function
-        if (duplicateStudent) {
-          showError("duplicateDatabaseEntry");
-          busyFlag = false;
-          return;
-        }
-
-        // Add the new student to STUDENT_DATA and sort by name
-        STUDENT_DATA.push(newStudent);
-        sortStudentData();
-
-        // Rebuild the select box with the new student names
-        const studentNameSelectBox = document.getElementById('studentName');
-        studentNameSelectBox.innerHTML = ''; // Clear the select box
-        STUDENT_DATA.forEach(function(item) {
-          let option = document.createElement('option');
-          option.text = item['Student Name'];
-          option.value = item['Student Name'];
-          studentNameSelectBox.add(option);
-        });
-
-        // Switch the select box name to the new student
-        studentNameSelectBox.value = newStudent['Student Name'];
-
-        // Build the array of data for the sheet
-        const newStudentArray = [
-          newStudent['Student Name'],
-          newStudent['Gender'],
-          newStudent['Date Of Birth'],
-          newStudent['Incoming Grade Level'],
-          newStudent['Grade Level Status'],
-          newStudent['Enrollment Manager'],
-          newStudent['Parent/Guardian Name'],
-          newStudent['Parent/Guardian Phone'],
-          newStudent['Parent/Guardian Email'],
-          newStudent['Current School Name'],
-          newStudent['Current Teacher Name'],
-          newStudent['Current Teacher Email'],
-          newStudent['Enrolled In EEC']
-        ];
-    
-        // Update the dashboard and close the 'Add Student' modal
-        updateStudentData(newStudent['Student Name']);
-        closeHtmlModal("addStudentModal");
-        resetModal();
-
-        google.script.run.withSuccessHandler(function(response) {
-          if (!response) {
-            showError("duplicateDatabaseEntry");
-            for (let i = 0; i < STUDENT_DATA.length; i++) {
-              if (STUDENT_DATA[i]['Student Name'] === newStudent['Student Name']) {
-                STUDENT_DATA.splice(i, 1);
-                break;
-              }
-            }
-            sortStudentData();
-            updateStudentNames();
-            busyFlag = false;
-            return;
-          } else {
-            const toastMessage = newStudent['Student Name'] + " added successfully!";
-            playNotificationSound("success");
-            showToast("", toastMessage, 5000);
-          }
-          busyFlag = false;
-        }).addStudentData(newStudentArray);
+      busyFlag = true;
       
-        toastMessage = "Adding student...";
-        showToast("", toastMessage, 5000);
+      // Get the form data
+      const toggleDataButton = document.getElementById('toggleDataButton');
+      const dataFilter = parseInt(toggleDataButton.getAttribute('data-state'), 10);
+      let status;
+
+      if (dataFilter === 0) {
+        status = 'Active';
       }
-    };
+      else if (dataFilter === 1) {
+        status = 'Archive';
+      }
+      
+      const firstName = document.getElementById('addFirstName').value;
+      const lastName = document.getElementById('addLastName').value;
+      const studentName = lastName + ", " + firstName;
+
+      // Create temporary student object
+      const tempStudent = {
+        'Status': status,
+        'Student Name': studentName,
+        'Gender': document.getElementById('addGender').value,
+        'Date Of Birth': document.getElementById('addDateOfBirth').value,
+        'Incoming Grade': document.getElementById('addIncomingGrade').value,
+        'Grade Status': document.getElementById('addGradeStatus').value,
+        'Enrollment Manager': document.getElementById('addEnrollmentManager').value,
+        'Parent/Guardian Name': document.getElementById('addParentGuardianName').value,
+        'Parent/Guardian Phone': document.getElementById('addParentGuardianPhone').value,
+        'Parent/Guardian Email': document.getElementById('addParentGuardianEmail').value,
+        'Current School Name': document.getElementById('addCurrentSchoolName').value,
+        'Current Teacher Name': document.getElementById('addCurrentTeacherName').value,
+        'Current Teacher Email': document.getElementById('addCurrentTeacherEmail').value,
+        'Enrolled In EEC': document.getElementById('addEnrolledInEEC').value
+      };
+
+      closeHtmlModal("addStudentModal");
+      showToast("", "Adding student...", 5000);
+
+      await getAvailableID();
+      tempStudent['Student ID'] = cachedID;
+
+      // Build the array of data for the sheet
+      const newStudentArray = [[
+        tempStudent['Student ID'],
+        tempStudent['Status'],
+        tempStudent['Student Name'],
+        tempStudent['Gender'],
+        tempStudent['Date Of Birth'],
+        tempStudent['Incoming Grade'],
+        tempStudent['Grade Status'],
+        tempStudent['Enrollment Manager'],
+        tempStudent['Parent/Guardian Name'],
+        tempStudent['Parent/Guardian Phone'],
+        tempStudent['Parent/Guardian Email'],
+        tempStudent['Current School Name'],
+        tempStudent['Current Teacher Name'],
+        tempStudent['Current Teacher Email'],
+        tempStudent['Enrolled In EEC'],
+      ]];
+    
+      google.script.run
+        .withSuccessHandler(() => {
+          STUDENT_DATA.push(tempStudent);
+          updateStudentNames();
+                    
+          const studentNameSelectBox = document.getElementById('studentName');
+          studentNameSelectBox.value = tempStudent['Student ID'];
+          studentNameSelectBox.dispatchEvent(new Event('change'));
+                    
+          showToast("", `${tempStudent['Student Name']} added successfully!`, 5000);
+          playNotificationSound("success");
+          busyFlag = false;
+        })
+        .withFailureHandler((error) => {
+          const errorString = String(error);
+          
+          if (errorString.includes("401")) {
+            sessionError();
+          }
+          else if (errorString.includes("permission")) {
+            showError("Error: PERMISSION");
+          }
+          else {
+            showError(error.message);
+          }
+          busyFlag = false;
+        })
+      .addStudentData(newStudentArray);
+    }
   }
 
   function addStudentErrorCheck() {
@@ -527,8 +592,8 @@
     const lastName = document.getElementById('addLastName').value;
     const gender = document.getElementById('addGender').value;
     const dateOfBirth = document.getElementById('addDateOfBirth').value;
-    const incomingGradeLevel = document.getElementById('addIncomingGradeLevel').value;
-    const gradeLevelStatus = document.getElementById('addGradeLevelStatus').value;
+    const incomingGrade = document.getElementById('addIncomingGrade').value;
+    const gradeStatus = document.getElementById('addGradeStatus').value;
     const enrollmentManager = document.getElementById('addEnrollmentManager').value;
     const parentGuardianName = document.getElementById('addParentGuardianName').value;
     const parentGuardianPhone = document.getElementById('addParentGuardianPhone').value;
@@ -540,148 +605,166 @@
 
     // Define regular expression patterns for error handling
     const phonePattern = /^\(\d{3}\) \d{3}-\d{4}$/;
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9-]{2,})+$/;
 
     if (!firstName) {
-      showError("missingFirstName");
+      showError("Error: MISSING_FIRST_NAME");
       return true;
     }
     if (!lastName) {
-      showError("missingLastName");
+      showError("Error: MISSING_LAST_NAME");
       return true;
     }
     if (!gender) {
-      showError("missingGender");
+      showError("Error: MISSING_GENDER");
       return true;
     }
     if (!dateOfBirth) {
-      showError("missingDateOfBirth");
+      showError("Error: MISSING_DOB");
       return true;
     }
-    if (!incomingGradeLevel) {
-      showError("missingIncomingGradeLevel");
+    if (!incomingGrade) {
+      showError("Error: MISSING_INCOMING_GRADE");
       return true;
     }
-    if (!gradeLevelStatus) {
-      showError("missingGradeLevelStatus");
+    if (!gradeStatus) {
+      showError("Error: MISSING_GRADE_STATUS");
       return true;
     }
     if (!enrollmentManager) {
-      showError("missingEnrollmentManager");
+      showError("Error: MISSING_ENROLLMENT_MANAGER");
       return true;
     }
     if (!parentGuardianName) {
-      showError("missingParentGuardianName");
+      showError("Error: MISSING_PARENT_GUARDIAN_NAME");
       return true;
     }
     if (!parentGuardianPhone) {
-      showError("missingParentGuardianPhone");
+      showError("Error: MISSING_PARENT_GUARDIAN_PHONE");
       return true;
     }
     if (!phonePattern.test(parentGuardianPhone)) {
-      showError("invalidParentGuardianPhone");
+      showError("Error: INVALID_PHONE");
       return true;
     }
     if (!parentGuardianEmail) {
-      showError("missingParentGuardianEmail");
+      showError("Error: MISSING_PARENT_GUARDIAN_EMAIL");
       return true;
     }
     if (!emailPattern.test(parentGuardianEmail)) {
-      showError("invalidParentGuardianEmail");
+      showError("Error: INVALID_PARENT_GUARDIAN_EMAIL");
       return true;
     }
     if (!currentSchoolName) {
-      showError("missingCurrentSchoolName");
+      showError("Error: MISSING_CURRENT_SCHOOL_NAME");
       return true;
     }
     if (!currentTeacherName) {
-      showError("missingCurrentTeacherName");
+      showError("Error: MISSING_CURRENT_TEACHER_NAME");
       return true;
     }
     if (!currentTeacherEmail) {
-      showError("missingCurrentTeacherEmail");
+      showError("Error: MISSING_CURRENT_TEACHER_EMAIL");
       return true;
     }
     if (!emailPattern.test(currentTeacherEmail)) {
-      showError("invalidCurrentTeacherEmail");
+      showError("Error: INVALID_CURRENT_TEACHER_EMAIL");
       return true;
     }
     if (!enrolledInEEC) {
-      showError("missingEnrolledInEEC");
+      showError("Error: MISSING_EEC_STATUS");
       return true;
     }
 
     return false;
   }
 
-  ////////////////////
-  // REMOVE STUDENT //
-  ////////////////////
+  /////////////////////
+  // ARCHIVE STUDENT //
+  /////////////////////
 
-  function removeStudent() {
+  async function removeStudent() {
     if (busyFlag) {
-      showError("operationInProgress");
+      showError("Error: OPERATION_IN_PROGRESS");
+      return;
+    }
+    
+    if (!saveFlag) {
+      showError("Error: UNSAVED_CHANGES");
       return;
     }
     
     if (removeStudentErrorCheck()) {
-      busyFlag = false;
-      return;
-    } 
+        return;
+    }
 
+    // Get student data
     const studentNameSelectBox = document.getElementById('studentName');
-    const message = "Are you sure you want to remove and archive the data for '" + studentNameSelectBox.value + "'?";
-    const title = `<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>Remove Student`
-    showModal(title, message, "Cancel", "Remove")
-      .then((buttonText) => {
-        if (buttonText === "Cancel") {
-          return;
-        } 
-        else {
-          busyFlag = true;
-          const selectedIndex = studentNameSelectBox.selectedIndex; // Get the index of the selected option
+    const selectedStudentID = studentNameSelectBox.value;
+    const selectedStudent = STUDENT_DATA.find(student => student['Student ID'] === selectedStudentID);
 
-          if (selectedIndex >= 0) {
-            let selectedStudent = studentNameSelectBox.options[selectedIndex].value; 
-            studentNameSelectBox.remove(selectedIndex); // Remove the selected option from the select box
-            studentNameSelectBox.selectedIndex = -1; // Deselect any option after removal
-        
-            // Temporarily store and then remove the selected student object from the STUDENT_DATA array by name
-            let removedStudent = STUDENT_DATA.find(student => student['Student Name'] === selectedStudent);
-            STUDENT_DATA = STUDENT_DATA.filter(student => student['Student Name'] !== selectedStudent);
+    if (!selectedStudent) {
+      showError("Error: MISSING_STUDENT_ENTRY");
+      return;
+    }
 
-            updateStudentNames();
+    // Show confirmation modal
+    const warningIcon = '<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>';
+    const message = `Are you sure you want to archive the data for '${selectedStudent['Student Name']}'?`;
+    const title = `${warningIcon}Archive Student`;
+    const buttonText = await showModal(title, message, "Cancel", "Archive");
 
-            let toastMessage = "Removing and achiving student...";
+    if (buttonText === "Cancel") {
+      return;
+    }
 
-            google.script.run.withSuccessHandler(function(response) {
-              if (response === "duplicateDatabaseEntry" || response === "missingDatabaseEntry") {
-                STUDENT_DATA.push(removedStudent);
-                sortStudentData();
-                updateStudentNames();
-                showError(response);
-                busyFlag = false;
-                return;
-              }
-              else {
-                toastMessage = "'" + selectedStudent + "' removed and archived successfully!";
-                playNotificationSound("remove");
-                showToast("", toastMessage, 5000);
-                busyFlag = false;
-              }
-            }).removeStudentData(selectedStudent);
-          
-            showToast("", toastMessage, 5000);
-          }
+    // Set busy flag and create a backup of the student data
+    busyFlag = true;
+    const selectedIndex = studentNameSelectBox.selectedIndex;
+
+    // Show progress toast
+    showToast("", "Archiving student...", 5000);
+
+    // Server operation
+    google.script.run
+      .withSuccessHandler(() => {
+        // Update the UI
+        if (selectedIndex >= 0) {
+          studentNameSelectBox.remove(selectedIndex);
+          studentNameSelectBox.selectedIndex = -1;
         }
-      }); 
+            
+        // Update the student status in the local data - CHANGE THIS!
+        STUDENT_DATA.find(student => student['Student ID'] === selectedStudentID)['Status'] = 'Archive';
+        updateStudentNames();
+            
+        const toastMessage = `'${selectedStudent['Student Name']}' archived successfully!`;
+        showToast("", toastMessage, 5000);
+        playNotificationSound("remove");
+        busyFlag = false;
+      })
+      .withFailureHandler((error) => {
+        const errorString = String(error);
+        
+        if (errorString.includes("401")) {
+          sessionError();
+        }
+        else if (errorString.includes("permission")) {
+            showError("Error: PERMISSION");
+        }
+        else {
+          showError(error.message);
+        }
+        busyFlag = false;
+      })
+      .updateStudentStatus(selectedStudentID, 'Archive');
   }
 
   function removeStudentErrorCheck() {
     const studentNameSelectBox = document.getElementById('studentName');
     
     if (studentNameSelectBox.options.length === 0) {
-      showError("missingData");
+      showError("Error: MISSING_STUDENT_DATA");
       return true;
     }
 
@@ -692,111 +775,92 @@
   // RENAME STUDENT //
   ////////////////////
 
-  function renameStudent() {
-    const studentNameSelectBox = document.getElementById('studentName');
+  async function renameStudent() {
+    if (busyFlag) {
+      showError("Error: OPERATION_IN_PROGRESS");
+      return;
+    }
     
     if (!saveFlag) {
-      showError("unsavedChanges");
+      showError("Error: UNSAVED_CHANGES");
       return;
     }
 
-    if (busyFlag) {
-      showError("operationInProgress");
-      return;
-    }
+    const studentNameSelectBox = document.getElementById('studentName');
 
     if (studentNameSelectBox.options.length === 0) {
-      showError("missingData");
+      showError("Error: MISSING_STUDENT_DATA");
       return true;
     }
 
-    // Add the student's name to the modal    
-    const selectedStudent = studentNameSelectBox.value;
-    document.getElementById('currentStudentName').innerHTML = "";
-    document.getElementById('currentStudentName').innerHTML = selectedStudent;
-    
+    // Get the selected student ID and data
+    const selectedStudentID = studentNameSelectBox.value;
+    const selectedStudent = STUDENT_DATA.find(student => student['Student ID'] === selectedStudentID);
+
+    if (!selectedStudent) {
+        showError("Error: MISSING_STUDENT_ENTRY");
+        return;
+    }
+
+    // Store the current name
+    const oldStudentName = selectedStudent['Student Name'];
+
+    // Update modal with current name
+    document.getElementById('currentStudentName').innerHTML = oldStudentName;
+
+    // Show the rename modal
     showHtmlModal("renameStudentModal");
     const renameStudentModalButton = document.getElementById("renameStudentModalButton");
     
-    renameStudentModalButton.onclick = function() {
-      busyFlag = true;
-      
-      if (renameStudentErrorCheck()) {
-        busyFlag = false;
-        return;
-      }
-      else {
+    renameStudentModalButton.onclick = async function() {
+        busyFlag = true;
+
+        if (renameStudentErrorCheck()) {
+            busyFlag = false;
+            return;
+        }
+
+        // Get new name/status data
         const firstName = document.getElementById('renameFirst').value;
         const lastName = document.getElementById('renameLast').value;
         const newStudentName = lastName + ", " + firstName;
+        const studentStatus = selectedStudent['Status'];
 
-        // Check for duplicate student
-        let duplicateStudent = false;
-
-        for (let i = 0; i < STUDENT_DATA.length; i++) {
-          if (STUDENT_DATA[i]['Student Name'] === newStudentName) {
-            duplicateStudent = true;
-            break;
-          }
-        }
-
-        // Exit the function
-        if (duplicateStudent) {
-          showError("duplicateDatabaseEntry");
-          busyFlag = false;
-          return;
-        }
-
-        // Find and update the student name in STUDENT_DATA
-        STUDENT_DATA.forEach(student => {
-          if (student['Student Name'] === selectedStudent) {
-            student['Student Name'] = newStudentName;
-          }
-        });
-        sortStudentData();
-
-        // Rebuild the select box with the new student names
-        const studentNameSelectBox = document.getElementById('studentName');
-        studentNameSelectBox.innerHTML = ''; // Clear the select box
-        STUDENT_DATA.forEach(function(item) {
-          let option = document.createElement('option');
-          option.text = item['Student Name'];
-          option.value = item['Student Name'];
-          studentNameSelectBox.add(option);
-        });
-        
-        // Switch the select box name to the renamed student
-        studentNameSelectBox.value = newStudentName;
-
-        // Update the dashboard and close the 'Add Student' modal
-        updateStudentData(newStudentName);
+        // Close modal immediately
         closeHtmlModal("renameStudentModal");
-        resetModal();
+        
+        // Show initial toast
+        showToast("", "Renaming student...", 5000);
 
-        google.script.run.withSuccessHandler(function(response) {
-          if (response === "duplicateDatabaseEntry" || response === "missingDatabaseEntry") {
-            STUDENT_DATA.forEach(student => {
-              if (student['Student Name'] === newStudentName) {
-                student['Student Name'] = selectedStudent;
-              }
-            });
-            sortStudentData();
+        // Save to Google Sheets
+        google.script.run
+          .withSuccessHandler(() => {
+            selectedStudent['Student Name'] = newStudentName;
             updateStudentNames();
-            showError(response);
-            busyFlag = false;
-            return;
-          }
-          else {
-            toastMessage = selectedStudent + " renamed to " + newStudentName + " successfully!";
+            
+            // Switch to renamed student
+            studentNameSelectBox.value = selectedStudentID;
+            studentNameSelectBox.dispatchEvent(new Event('change'));
+            
+            showToast("", `${oldStudentName} renamed to ${newStudentName} successfully!`, 5000);
             playNotificationSound("success");
-            showToast("", toastMessage, 5000);
-          }
-          busyFlag = false;
-        }).renameStudent(DATA_SET, selectedStudent, newStudentName);
-      
-        let toastMessage = "Renaming student...";
-        showToast("", toastMessage, 5000);
-      }
+            busyFlag = false;
+          })
+          .withFailureHandler((error) => {
+            const errorString = String(error);
+        
+            if (errorString.includes("401")) {
+              sessionError();
+            }
+            else if (errorString.includes("permission")) {
+            showError("Error: PERMISSION");
+            }
+            else {
+              showError(error.message);
+            }
+            busyFlag = false;
+          })
+        .renameStudent(selectedStudentID, studentStatus, newStudentName);
     };
   }
 
@@ -805,15 +869,192 @@
     const lastNameInput = document.getElementById('renameLast').value;
     
     if (!firstNameInput) {
-      showError("missingFirstName");
+      showError("Error: MISSING_FIRST_NAME");
       return true;
     }
 
     if (!lastNameInput) {
-      showError("missingLastName");
+      showError("Error: MISSING_LAST_NAME");
       return true;
     }
     
+    return false;
+  }
+
+  //////////////////////
+  // ACTIVATE STUDENT //
+  //////////////////////
+
+  async function activateStudent() {
+    if (busyFlag) {
+      showError("Error: OPERATION_IN_PROGRESS");
+      return;
+    }
+
+    if (!saveFlag) {
+      showError("Error: UNSAVED_CHANGES");
+      return;
+    }
+    
+    if (activateStudentErrorCheck()) {
+      busyFlag = false;
+      return;
+    }
+
+    // Get student data
+    const studentNameSelectBox = document.getElementById('studentName');
+    const selectedIndex = studentNameSelectBox.selectedIndex;
+
+    if (selectedIndex < 0) {
+        return;
+    }
+
+    const selectedStudentID = studentNameSelectBox.value;
+    const selectedStudentName = studentNameSelectBox.options[selectedIndex].text;
+
+    // Show confirmation modal with warning icon
+    const warningIcon = '<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>';
+    const message = `Are you sure you want to activate the data for '${selectedStudentName}'?`;
+    const title = `${warningIcon}Activate Student`;
+
+    const buttonText = await showModal(title, message, "Cancel", "Activate");
+
+    if (buttonText === "Cancel") {
+      return;
+    }
+
+    // Set busy flag and store backup
+    busyFlag = true;
+
+    // Show progress toast
+    showToast("", "Activating student...", 5000);
+
+    // Server operation
+    google.script.run
+      .withSuccessHandler(() => {
+        STUDENT_DATA.find(student => student['Student ID'] === selectedStudentID)['Status'] = 'Active';
+        updateStudentNames();
+
+        showToast("", `'${selectedStudentName}' activated successfully!`, 5000);
+        playNotificationSound("success");
+        busyFlag = false;
+      })
+      .withFailureHandler((error) => {
+        const errorString = String(error);
+        
+        if (errorString.includes("401")) {
+          sessionError();
+        }
+        else if (errorString.includes("permission")) {
+            showError("Error: PERMISSION");
+        }
+        else {
+          showError(error.message);
+        }
+        busyFlag = false;
+      })
+    .updateStudentStatus(selectedStudentID, 'Active');
+  }
+
+  function activateStudentErrorCheck() {
+    const studentNameSelectBox = document.getElementById('studentName');
+    
+    if (studentNameSelectBox.options.length === 0) {
+      showError("Error: MISSING_STUDENT_DATA");
+      return true;
+    }
+
+    return false;
+  }
+
+  ////////////////////
+  // DELETE STUDENT //
+  ////////////////////
+  
+  async function deleteStudent() {
+    if (busyFlag) {
+      showError("Error: OPERATION_IN_PROGRESS");
+      return;
+    }
+    
+    if (!saveFlag) {
+      showError("Error: UNSAVED_CHANGES");
+      return;
+    }
+
+    if (deleteStudentErrorCheck()) {
+      busyFlag = false;
+      return;
+    }
+
+    // Get student data
+    const studentNameSelectBox = document.getElementById('studentName');
+    const selectedStudentID = studentNameSelectBox.value;
+    const selectedStudent = STUDENT_DATA.find(student => student['Student ID'] === selectedStudentID);
+    const selectedStudentName = selectedStudent['Student Name'];
+    const selectedStudentStatus = selectedStudent['Status'];
+
+    // Show confirmation modal with warning icon
+    const warningIcon = '<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>';
+    const message = `Are you sure you want to delete the data for '${selectedStudentName}'? This action cannot be undone.`;
+    const title = `${warningIcon}Delete Student`;
+
+    const buttonText = await showModal(title, message, "Cancel", "Delete");
+
+    if (buttonText === "Cancel") {
+      return;
+    }
+
+    // Set busy flag and store backup
+    busyFlag = true;
+    const selectedIndex = studentNameSelectBox.selectedIndex;
+
+    // Show progress toast
+    showToast("", "Deleting student...", 5000);
+
+    // Server operation
+    google.script.run
+      .withSuccessHandler(() => {
+        if (selectedIndex >= 0) {
+          studentNameSelectBox.remove(selectedIndex);
+          studentNameSelectBox.selectedIndex = -1;
+        }
+
+        // Remove student with the selected ID from STUDENT_DATA
+        STUDENT_DATA = STUDENT_DATA.filter(student => student['Student ID'] !== selectedStudentID);
+
+        updateStudentNames();
+                  
+        const toastMessage = `'${selectedStudent}' deleted successfully!`;
+        playNotificationSound("remove");
+        showToast("", toastMessage, 5000);
+        busyFlag = false;
+      })
+      .withFailureHandler((error) => {
+        const errorString = String(error);
+        
+        if (errorString.includes("401")) {
+          sessionError();
+        }
+        else if (errorString.includes("permission")) {
+            showError("Error: PERMISSION");
+        }
+        else {
+          showError(error.message);
+        }
+        busyFlag = false;
+      })
+    .deleteStudentData(selectedStudentID, selectedStudentStatus);
+  }
+
+  function deleteStudentErrorCheck() {
+    const studentNameSelectBox = document.getElementById('studentName');
+    
+    if (studentNameSelectBox.options.length === 0) {
+      showError("Error: MISSING_STUDENT_DATA");
+      return true;
+    }
+
     return false;
   }
 
@@ -823,17 +1064,31 @@
 
   async function composeEmail() {
     if (busyFlag) {
-      showError("operationInProgress");
+      showError("Error: OPERATION_IN_PROGRESS");
       return;
     }
     
+    if (!saveFlag) {
+      showError("Error: UNSAVED_CHANGES");
+      return;
+    }
+    
+    // Prevent add email modal from being shown if no student selected
+    const studentID = document.getElementById('studentName').value;
+
+    if (!studentID) {
+      showError("Error: MISSING_STUDENT_DATA");
+      return;
+    }
+    
+    // Reset the warning before the modal is opened
     document.getElementById('templateWarning').style.display = 'none';
     showHtmlModal("emailModal");
 
     const sendEmailModalButton = document.getElementById('sendEmailModalButton');
     sendEmailModalButton.onclick = async function() {
       busyFlag = true;
-      
+        
       if (sendEmailErrorCheck()) {
         busyFlag = false;
         return;
@@ -843,42 +1098,66 @@
       const recipient = document.getElementById('emailRecipient').value;
       const subject = document.getElementById('emailSubject').value;
       const body = document.getElementById('emailBody').innerHTML;
-      let toastMessage = "";
+      let attachments = [];
 
       closeHtmlModal("emailModal");
-      resetModal();
 
-      if (template === "acceptance" || template === "acceptanceConditional") {
-        toastMessage = "Attaching forms and sending email...";
-        showToast("", toastMessage, 10000);
-        setTimeout(async function () {  // Wrap in an async function inside setTimeout
-          try {
-              // Generate PDF and send the email
-              await generatePDFPacket(recipient, subject, body);
-          } catch (error) {
-              console.error("Error sending email: ", error);
-              showError("emailFailure");  // Optionally show an error if email fails
-          }
-        }, 100);  // Short delay to allow UI update to process before PDF generation
+      try {
+        const toastMessage = template === "acceptance" || template === "acceptanceConditional"
+          ? "Attaching enrollment packet and sending email..." 
+          : "Sending email...";
+        const toastDuration = template === "acceptance" || template === "acceptanceConditional" ? 10000 : 5000;
+        
+        showToast("", toastMessage, toastDuration);
+
+        if (template === "acceptance" || template === "acceptanceConditional") {
+          attachments = await generateEnrollmentPacket();
+        }
+
+        google.script.run
+          .withSuccessHandler(() => {
+            playNotificationSound("email");
+            showToast("", "Email successfully sent to: " + recipient, 10000);
+            busyFlag = false;
+          })
+          .withFailureHandler((error) => {
+            const errorString = String(error);
+        
+            if (errorString.includes("401")) {
+              sessionError();
+            } else {
+              showError(error.message);
+            }
+
+            busyFlag = false;
+          })
+        .createEmail(recipient, subject, body, attachments);
+      } catch (error) {
+        showError(error.message);
+        //showError("Error: EMAIL_FAILURE");
+        busyFlag = false;
       }
-      else {
-        toastMessage = "Sending email...";
-        showToast("", toastMessage, 5000);
-        await sendEmail(recipient, subject, body);
-      }
-    }
+    };
   }
 
-  async function generatePDFPacket(recipient, subject, body) {
+  async function generateEnrollmentPacket() {
     // Get the document definitions for each PDF
     const page1 = createAdmissionContract();
     const page2 = createTuitionPaymentOptions();
     const page3 = createMedicalConsentToTreat();
     const page4 = createStudentEmergencyContacts();
-    const page5 = createBlackbaudTuitionInformation();
+    const page5 = createTechnologyUseConsent();
+    const page6 = createBlackbaudTuitionInformation();
           
     // Concatenate the document definitions into one, adding page breaks
-    const packetContent = [].concat(page1.content, { text: '', pageBreak: 'after' }, page2.content, { text: '', pageBreak: 'after' }, page3.content, { text: '', pageBreak: 'after' }, page4.content, { text: '', pageBreak: 'after' }, page5.content);
+    const packetContent = [].concat(
+      page1.content, { text: '', pageBreak: 'after' }, 
+      page2.content, { text: '', pageBreak: 'after' }, 
+      page3.content, { text: '', pageBreak: 'after' }, 
+      page4.content, { text: '', pageBreak: 'after' }, 
+      page5.content, { text: '', pageBreak: 'after' }, 
+      page6.content
+    );
 
     // Use 'page1' to define other sections/styles since they are the same across all document pages
     const docDefinition = {
@@ -896,37 +1175,16 @@
     // Use async/await for PDF generation and sending the email
     return new Promise((resolve, reject) => {
       pdfMake.createPdf(docDefinition).getBlob((blob) => {
-        blob.arrayBuffer().then((arrayBuffer) => {
-          const uint8Array = new Uint8Array(arrayBuffer);
-          const byteArray = Array.from(uint8Array);
-          sendEmail(recipient, subject, body, byteArray)
-          .then(resolve)  // Resolve the promise when done
-          .catch(reject);  // Reject if there's an error
-        });
+        blob.arrayBuffer()
+          .then(arrayBuffer => {
+            const uint8Array = new Uint8Array(arrayBuffer);
+            const byteArray = Array.from(uint8Array);
+            resolve(byteArray);
+          })
+          .catch(reject);
       });
     });
-  }
-
-  function sendEmail(recipient, subject, body, attachments) {
-    return new Promise((resolve, reject) => {
-      google.script.run.withSuccessHandler(function(response) {
-        if (response === "emailQuotaLimit") {
-          showError("emailQuotaLimit");
-          reject("emailQuotaLimit");
-        } 
-        else if (response === "emailFailure") {
-          showError("emailFailure");
-          reject("emailFailure");
-        } 
-        else {
-          playNotificationSound("success");
-          showToast("", "Email successfully sent to: " + recipient, 10000);
-          resolve(response);
-        }
-        busyFlag = false;
-      }).createEmail(recipient, subject, body, attachments);
-    });
-  }
+  }  
 
   function getEmailTemplate() {
     // Get references to the selectbox and text areas
@@ -939,56 +1197,71 @@
     const subjectTemplate = document.getElementById('emailSubject');
     const bodyTemplate = document.getElementById('emailBody');
     
-    templateWarning.style.display = 'none';
+    // Reset template warning
+    document.getElementById('templateWarning').style.display = 'none';
+
+    // Extract email templates from APP_SETTINGS
+    const emailTemplates = APP_SETTINGS.emailTemplateSettings;
+
+    // Helper function to find a template by type (e.g., 'Initial', 'Reminder')
+    const getTemplate = (type) => emailTemplates[type] || { subject: '', body: '' };
 
     // Update the template content based on the selected option
     switch (templateType) {
       case 'waitlist':
+        const waitlistTemplate = getTemplate('waitlist');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = SETTINGS['Waitlist Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Waitlist Body'], mergeData);
+        subjectTemplate.value = waitlistTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(waitlistTemplate.body, mergeData);
         break;
 
       case 'evaluation':
+        const evaluationTemplate = getTemplate('evaluation');
         recipient.value = currentTeacherEmail;
-        subjectTemplate.value = SETTINGS['Evaluation Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Evaluation Body'], mergeData);
+        subjectTemplate.value = evaluationTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(evaluationTemplate.body, mergeData);
         break;
 
       case 'screeningEEC':      
+        const screeningEECTemplate = getTemplate('screeningEEC');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = SETTINGS['Screening (EEC) Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Screening (EEC) Body'], mergeData);
+        subjectTemplate.value = screeningEECTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(screeningEECTemplate.body, mergeData);
         break;
 
       case 'screeningSchool':      
+        const screeningSchoolTemplate = getTemplate('screeningSchool');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = SETTINGS['Screening (School) Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Screening (School) Body'], mergeData);
+        subjectTemplate.value = screeningSchoolTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(screeningSchoolTemplate.body, mergeData);
         break;
 
       case 'acceptance':
+        const acceptanceTemplate = getTemplate('acceptance');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = SETTINGS['Acceptance Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Acceptance Body'], mergeData);
+        subjectTemplate.value = acceptanceTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(acceptanceTemplate.body, mergeData);
         break;
       
       case 'acceptanceConditional':
+        const acceptanceConditionalTemplate = getTemplate('acceptanceConditional');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = SETTINGS['Acceptance (Conditional) Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Acceptance (Conditional) Body'], mergeData);
+        subjectTemplate.value = acceptanceConditionalTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(acceptanceConditionalTemplate.body, mergeData);
         break;
       
       case 'rejection':
+        const rejectionTemplate = getTemplate('rejection');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = SETTINGS['Rejection Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Rejection Body'], mergeData);
+        subjectTemplate.value = rejectionTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(rejectionTemplate.body, mergeData);
         break;
       
       case 'completion':
+        const completionTemplate = getTemplate('completion');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = SETTINGS['Completion Subject'];
-        bodyTemplate.innerHTML = getEmailBody(SETTINGS['Completion Body'], mergeData);
+        subjectTemplate.value = completionTemplate.subject;
+        bodyTemplate.innerHTML = getEmailBody(completionTemplate.body, mergeData);
         break;
 
       default:
@@ -1019,7 +1292,7 @@
     });
 
     if (bodyTemplate.includes(warningIcon)) {
-      document.getElementById('templateWarning').style.display = "block";
+      document.getElementById('templateWarning').style.display = '';
     }
 
     return bodyTemplate;
@@ -1027,25 +1300,26 @@
 
   function getMergeData() {
     // Split the student name into first and last
-    const studentName = document.getElementById('studentName').value;
-    let nameParts = studentName.match(/(\w+),\s*(\w+)/);
-    let studentLastName = nameParts[1];
-    let studentFirstName = nameParts[2];
+    const studentSelect = document.getElementById('studentName');
+    const studentName = studentSelect.options[studentSelect.selectedIndex].text;
+    let nameParts = studentName.match(/(.+),\s*(.+)/);
+    let studentLastName = nameParts[1].trim();
+    let studentFirstName = nameParts[2].trim();
 
     // Set the screening type and fee based on grade level
-    const incomingGradeLevel = document.getElementById('incomingGradeLevel').value;
+    const incomingGrade = document.getElementById('incomingGrade').value;
     const enrolledInEEC = document.getElementById('enrolledInEEC').value;
-    const developmentalScreeningFeeEEC = SETTINGS['Developmental Screening Fee (EEC)'];
-    const developmentalScreeningFeeTKK = SETTINGS['Developmental Screening Fee (TK/K)'];
-    const academicScreeningFee = SETTINGS['Academic Screening Fee'];
+    const developmentalScreeningFeeEEC = APP_SETTINGS.feeSettings.developmentalScreeningEECFee;
+    const developmentalScreeningFeeTKK = APP_SETTINGS.feeSettings.developmentalScreeningSchoolFee;
+    const academicScreeningFee = APP_SETTINGS.feeSettings.academicScreeningFee;
     let screeningType;
     let screeningFee;
 
-    if (!incomingGradeLevel) {
+    if (!incomingGrade) {
       screeningType = "";
       screeningFee = "";
     }
-    else if (incomingGradeLevel === "Transitional Kindergarten" || incomingGradeLevel === "Kindergarten") {
+    else if (incomingGrade === "Transitional Kindergarten" || incomingGrade === "Kindergarten") {
       screeningType = "Developmental Screening";
       if (!enrolledInEEC) {
         screeningFee = "";
@@ -1080,10 +1354,10 @@
 
     // Create the mergeData object
     mergeData = {
-      schoolYear: SETTINGS['School Year'],
+      schoolYear: APP_SETTINGS.schoolSettings.schoolYear,
       lastName: studentLastName,
       firstName: studentFirstName,
-      gradeLevel: incomingGradeLevel,
+      gradeLevel: incomingGrade,
       teacherName: document.getElementById('currentTeacherName').value,
       evaluationDueDate: formattedEvaluationDueDate,
       screeningType: screeningType, 
@@ -1108,24 +1382,25 @@
   function sendEmailErrorCheck() {
     const recipient = document.getElementById('emailRecipient').value;
     const body = document.getElementById('emailBody').innerHTML;
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9-]{2,})+$/;
+
     const warningIcon = '<i class="bi-exclamation-triangle-fill" style="color: var(--warning-color)"></i>';
     
     if (!recipient) {
-      showError("missingEmailRecipient");
+      showError("Error: MISSING_RECIPIENT");
       return true;
     }
 
     const recipients = recipient.split(',');
     for (let i = 0; i < recipients.length; i++) {
       if (!emailPattern.test(recipients[i].trim())) {
-        showError("invalidEmail");
+        showError("Error: INVALID_EMAIL");
         return true;
       }
     }
 
     if (body.includes(warningIcon)) {
-      showError("missingEmailTemplateData")
+      showError("Error: MISSING_TEMPLATE_DATA");
       return true;
     }
 
@@ -1138,7 +1413,7 @@
 
   function exportForms() {
     if (busyFlag) {
-      showError("operationInProgress");
+      showError("Error: OPERATION_IN_PROGRESS");
       return;
     }
     
@@ -1150,7 +1425,6 @@
       const formType = document.getElementById('formSelect').value;
       
       closeHtmlModal("exportFormsModal");
-      resetModal();
 
       setTimeout(function() {
         switch (formType) {
@@ -1165,6 +1439,9 @@
             break;
           case 'Student Emergency Contacts':
             pdfMake.createPdf(createStudentEmergencyContacts()).download('Student Emergency Contacts.pdf');
+            break;
+          case 'Technology Consent':
+            pdfMake.createPdf(createTechnologyUseConsent()).download('Technology Consent.pdf');
             break;
           case 'Blackbaud Tuition Information':
             pdfMake.createPdf(createBlackbaudTuitionInformation()).download('Blackbaud Tuition Information.pdf');
@@ -1182,7 +1459,7 @@
 
   function exportData() {
     if (busyFlag) {
-      showError("operationInProgress");
+      showError("Error: OPERATION_IN_PROGRESS");
       return;
     }
     
@@ -1196,355 +1473,178 @@
       const fileType = document.getElementById('fileTypeSelect').value;
       let fileName;
 
-      if (dataType === 'activeData') {
-        fileName = 'Active Enrollment Data - ' + SETTINGS['School Year'];
-      } else {
-        fileName = 'Archive Enrollment Data - ' + SETTINGS['School Year'];
+      if (dataType === 'studentData') {
+        fileName = 'Student Enrollment Data - ' + APP_SETTINGS.schoolSettings.schoolYear;
       }
       
       switch (fileType) {
         case 'csv':
-          google.script.run.withSuccessHandler(function(data) {
-            let a = document.createElement('a');
-            
-            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(data);
-            a.download = fileName + '.csv';
-            a.click();
-            busyFlag = false;
-          }).getCsv(dataType);
+          google.script.run
+            .withSuccessHandler(function(data) {
+              let a = document.createElement('a');
+              
+              a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(data);
+              a.download = fileName + '.csv';
+              a.click();
+              busyFlag = false;
+            })
+            .withFailureHandler((error) => {
+              const errorString = String(error);
+        
+              if (errorString.includes("401")) {
+                sessionError();
+              } else {
+                showError(error.message);
+              }
+              busyFlag = false;
+            })
+          .getCsv(dataType);
           break;
         case 'xlsx':
-          google.script.run.withSuccessHandler(function(data) {
-            // Convert the raw data into a Uint8Array
-            const uint8Array = new Uint8Array(data);
-                    
-            // Create a Blob from the binary data
-            const blob = new Blob([uint8Array], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-            
-            const url = URL.createObjectURL(blob);
-            let a = document.createElement('a');
-            a.href = url;
-            a.download = fileName + '.xlsx';
-            a.click();
-            URL.revokeObjectURL(url);
-            busyFlag = false;
-          }).getXlsx(dataType);
+          google.script.run
+            .withSuccessHandler(function(data) {
+              // Convert the raw data into a Uint8Array
+              const uint8Array = new Uint8Array(data);
+                      
+              // Create a Blob from the binary data
+              const blob = new Blob([uint8Array], {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+              
+              const url = URL.createObjectURL(blob);
+              let a = document.createElement('a');
+              a.href = url;
+              a.download = fileName + '.xlsx';
+              a.click();
+              URL.revokeObjectURL(url);
+              busyFlag = false;
+            })
+            .withFailureHandler((error) => {
+              const errorString = String(error);
+        
+              if (errorString.includes("401")) {
+                sessionError();
+              } else {
+                showError(error.message);
+              }
+              busyFlag = false;
+            })
+          .getXlsx(dataType);
           break;
       }
       
       closeHtmlModal("exportDataModal");
-      resetModal();
     };
-  }
-
-  //////////////////////////////
-  // ARCHIVE/ACTIVE DATA VIEW //
-  //////////////////////////////
-
-  function toggleDataView() {
-    // Show error and prevent Add Student if there are unsaved changes
-    if (!saveFlag) {
-      showError("unsavedChanges");
-      return;
-    }
-
-    if (busyFlag) {
-      showError("operationInProgress");
-      return;
-    }
-    
-    const toolbar = document.getElementById('toolbar');
-    const page = document.getElementById('page');
-    const loadingIndicator = document.getElementById('loading-indicator');
-
-    // Show the loading indicator and hide the page
-    toolbar.style.display = 'none';
-    page.style.display = 'none';
-    loadingIndicator.style.display = 'block';
-    
-    DATA_SET = (DATA_SET === "active") ? "archive" : "active";
-
-    let promise;
-    const header = document.getElementById('header-text');
-
-    if (DATA_SET === "archive") {
-      document.getElementById('header-text').innerText += " - Archive";
-      promise = new Promise((resolve, reject) => {
-        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getArchiveData();
-      });
-    } else {
-      header.innerText = header.innerText.replace(" - Archive", "");
-      promise = new Promise((resolve, reject) => {
-        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getActiveData();
-      });
-    }
-
-    promise.then(studentData => {
-        STUDENT_DATA = studentData;
-        
-        if (DATA_SET === "active") {
-          document.getElementById('addStudentButton').style.display = "block";
-          document.getElementById('removeStudentButton').style.display = "block";
-          document.getElementById('restoreStudentButton').style.display = "none";
-          document.getElementById('deleteStudentButton').style.display = "none";
-          document.getElementById('emailButton').style.display = "block";
-          document.getElementById('archiveButton').style.display = "block";
-          document.getElementById('backButton').style.display = "none";
-        } 
-        else {
-          document.getElementById('addStudentButton').style.display = "none";
-          document.getElementById('restoreStudentButton').style.display = "block";
-          document.getElementById('deleteStudentButton').style.display = "block";
-          document.getElementById('removeStudentButton').style.display = "none";
-          document.getElementById('emailButton').style.display = "none";
-          document.getElementById('archiveButton').style.display = "none";
-          document.getElementById('backButton').style.display = "block";
-        }
-
-        updateStudentNames();
-
-        // Hide loading indicator and show dashboard page
-        loadingIndicator.style.display = 'none';
-        toolbar.style.display = 'block';
-        page.style.display = 'flex';
-      
-      }).catch(error => {
-        console.error("Error fetching data:", error);
-    });
-  }
-  
-  /////////////////////
-  // RESTORE STUDENT //
-  /////////////////////
-
-  function restoreStudent() {
-    if (busyFlag) {
-      showError("operationInProgress");
-      return;
-    }
-    
-    if (restoreStudentErrorCheck()) {
-      busyFlag = false;
-      return;
-    }
-
-    const studentNameSelectBox = document.getElementById('studentName');
-    const message = "Are you sure you want to restore the data for '" + studentNameSelectBox.value + "'?";
-    const title = `<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>Archive Student`
-    showModal(title, message, "Cancel", "Restore")
-      .then((buttonText) => {
-        if (buttonText === "Cancel") {
-          return;
-        } 
-        else {
-          busyFlag = true;
-          const selectedIndex = studentNameSelectBox.selectedIndex; // Get the index of the selected option
-
-          if (selectedIndex >= 0) {
-            let selectedStudent = studentNameSelectBox.options[selectedIndex].value; 
-            studentNameSelectBox.remove(selectedIndex); // Remove the selected option from the select box
-            studentNameSelectBox.selectedIndex = -1; // Deselect any option after removal
-        
-            // Temporarily store and then remove the selected student object from the STUDENT_DATA array by name
-            let removedStudent = STUDENT_DATA.find(student => student['Student Name'] === selectedStudent);
-            STUDENT_DATA = STUDENT_DATA.filter(student => student['Student Name'] !== selectedStudent);
-
-            updateStudentNames();
-            
-            let toastMessage = "Restoring student...";
-
-            google.script.run.withSuccessHandler(function(response) {
-              if (response === "duplicateDatabaseEntry" || response === "missingDatabaseEntry") {
-                STUDENT_DATA.push(removedStudent);
-                sortStudentData();
-                updateStudentNames();
-                showError(response);
-                busyFlag = false;
-                return;
-              }
-              else {
-                toastMessage = "'" + selectedStudent + "' restored successfully!";
-                playNotificationSound("success");
-                showToast("", toastMessage, 5000);
-                busyFlag = false;
-              }
-            }).restoreStudentData(selectedStudent);
-
-            showToast("", toastMessage, 5000);
-          }
-        }
-      });
-  }
-
-  function restoreStudentErrorCheck() {
-    const studentNameSelectBox = document.getElementById('studentName');
-    
-    if (studentNameSelectBox.options.length === 0) {
-      showError("missingData");
-      return true;
-    }
-
-    return false;
-  }
-
-  ////////////////////
-  // DELETE STUDENT //
-  ////////////////////
-  
-  function deleteStudent() {
-    if (busyFlag) {
-      showError("operationInProgress");
-      return;
-    }
-    
-    if (deleteStudentErrorCheck()) {
-      busyFlag = false;
-      return;
-    } 
-
-    const studentNameSelectBox = document.getElementById('studentName');
-    const message = "Are you sure you want to delete the data for '" + studentNameSelectBox.value + "'? This action cannot be undone.";
-    const title = `<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>Delete Student`
-    showModal(title, message, "Cancel", "Delete")
-      .then((buttonText) => {
-        if (buttonText === "Cancel") {
-          return;
-        } 
-        else {
-          busyFlag = true;
-          const selectedIndex = studentNameSelectBox.selectedIndex; // Get the index of the selected option
-
-          if (selectedIndex >= 0) {
-            let selectedStudent = studentNameSelectBox.options[selectedIndex].value; 
-            studentNameSelectBox.remove(selectedIndex); // Remove the selected option from the select box
-            studentNameSelectBox.selectedIndex = -1; // Deselect any option after removal
-        
-            // Temporarily store and then remove the selected student object from the STUDENT_DATA array by name
-            let removedStudent = STUDENT_DATA.find(student => student['Student Name'] === selectedStudent);
-            STUDENT_DATA = STUDENT_DATA.filter(student => student['Student Name'] !== selectedStudent);
-
-            updateStudentNames();
-
-            let toastMessage = "Deleting student...";
-
-            google.script.run.withSuccessHandler(function(response) {
-              if (response === "duplicateDatabaseEntry" || response === "missingDatabaseEntry") {
-                STUDENT_DATA.push(removedStudent);
-                sortStudentData();
-                updateStudentNames();
-                showError(response);
-                busyFlag = false;
-                return;
-              } 
-              else {
-                toastMessage = "'" + selectedStudent + "' deleted successfully!";
-                playNotificationSound("remove");
-                showToast("", toastMessage, 5000);
-                busyFlag = false;
-              }
-            }).deleteStudentData(selectedStudent);
-
-            showToast("", toastMessage, 5000);
-          }
-        }
-      });
-  }
-
-  function deleteStudentErrorCheck() {
-    const studentNameSelectBox = document.getElementById('studentName');
-    
-    if (studentNameSelectBox.options.length === 0) {
-      showError("missingData");
-      return true;
-    }
-
-    return false;
   }
 
   ///////////////////////
   // UTILITY FUNCTIONS //
   ///////////////////////
 
-  // Build the 'studentName' select box with student names
   function updateStudentNames() {
+    const toggleDataButton = document.getElementById('toggleDataButton');
+    const dataFilter = parseInt(toggleDataButton.getAttribute('data-state'), 10);
     const studentNameSelectBox = document.getElementById('studentName');
     studentNameSelectBox.innerHTML = ''; // Reset selectbox options
     
-    if (Object.keys(STUDENT_DATA).length === 0) {
-      console.log ("WARNING: No student data found!")
+    // Filter the student data by STUDENT_DATA['Status']
+    let filteredStudentData = STUDENT_DATA;
+
+    if (dataFilter === 0) {
+      filteredStudentData = STUDENT_DATA.filter(item => item['Status'] === 'Active');
+    } else if (dataFilter === 1) {
+      filteredStudentData = STUDENT_DATA.filter(item => item['Status'] === 'Archive');
     }
+
+    // Sort the student data
+    const sortedStudentData = filteredStudentData.sort(function(a, b) {
+      return a['Student Name'].localeCompare(b['Student Name']);
+    });
     
-    STUDENT_DATA.forEach(function(item) {
+    sortedStudentData.forEach(function(item) {
       let option = document.createElement('option');
       option.text = item['Student Name'];
-      option.value = item['Student Name'];
+      option.value = item['Student ID'];
       studentNameSelectBox.add(option);
     });
 
-    // Update student information for the first student
-    if (studentNameSelectBox.options.length > 0) {
-      let selectedStudent = studentNameSelectBox.options[0].value;
-      updateStudentData(selectedStudent);
+    // Check if there are students to display
+    if (sortedStudentData.length === 0) {
+        console.log("WARNING: No student data found for the selected filter.");
+        document.getElementById('profileDataTable').style.display = 'none';
+        document.getElementById('profileWarning').style.display = '';
+        document.getElementById('enrollmentDataTable').style.display = 'none';
+        document.getElementById('enrollmentWarning').style.display = '';
+    } else {
+        document.getElementById('profileDataTable').style.display = '';
+        document.getElementById('profileWarning').style.display = 'none';
+        document.getElementById('enrollmentDataTable').style.display = '';
+        document.getElementById('enrollmentWarning').style.display = 'none';
+
+        // If there are students, set the first one as selected by default
+        studentNameSelectBox.value = sortedStudentData[0]['Student ID']; // Default to first student
+        studentNameSelectBox.dispatchEvent(new Event('change')); // Trigger 'change' event
     }
-    else {
-      updateStudentData();
+
+    // Clear student data if no options
+    if (studentNameSelectBox.options.length === 0) {
+        updateStudentData();
     }
   }
-
-  function updateStudentData(selectedStudent) {
-    const clearAll = !selectedStudent || selectedStudent === "";
+  
+  // Update student profile fields
+  function updateStudentData(selectedStudentID) {
+    const clearAll = !selectedStudentID || selectedStudentID === "";
     
     let student = clearAll ? {} : STUDENT_DATA.find(function(item) {
-      return item['Student Name'] === selectedStudent;
+      return item['Student ID'] === selectedStudentID;
     });
 
-    const elementKeyMappings = {
-      'gender': 'Gender', 'dateOfBirth': 'Date Of Birth', 'incomingGradeLevel': 'Incoming Grade Level', 'gradeLevelStatus': 'Grade Level Status', 'enrollmentManager': 'Enrollment Manager',
-      'parentGuardianName': 'Parent/Guardian Name', 'parentGuardianPhone': 'Parent/Guardian Phone', 'parentGuardianEmail': 'Parent/Guardian Email',
-      'currentSchoolName': 'Current School Name', 'currentTeacherName': 'Current Teacher Name', 'currentTeacherEmail': 'Current Teacher Email',
-      'enrolledInEEC': 'Enrolled In EEC',
-      'evaluationDueDate': 'Evaluation Due Date', 'evaluationEmail': 'Evaluation Email Sent',
-      'studentEvaluationForm': 'Evaluation Form',
-      'contactedToSchedule': 'Contacted To Schedule', 'screeningDate': 'Screening Date', 'screeningTime': 'Screening Time', 'screeningEmail': 'Screening Email Sent',
-      'reportCard': 'Report Card', 'iepDocumentation': 'IEP Documentation', 'screeningFee': 'Screening Fee',
-      'adminSubmissionDate': 'Admin Submission Date', 'adminAcceptance': 'Admin Acceptance', 'acceptanceDueDate': 'Acceptance Due Date', 'acceptanceEmail': 'Acceptance Email Sent', 'familyAcceptance': 'Family Acceptance',
-      'blackbaudAccount': 'Blackbaud Account', 'birthCertificatePassport': 'Birth Certificate/Passport',   'immunizationRecords': 'Immunization Records', 'admissionContractForm': 'Admission Contract Form',   'tuitionPaymentForm': 'Tuition Payment Form', 'medicalConsentForm': 'Medical Consent Form',  'emergencyContactsForm': 'Emergency Contacts Form', 'registrationFee': 'Registration Fee',
-      'enrollmentNotes': 'Enrollment Notes'
-    };
-
-    Object.keys(elementKeyMappings).forEach((id) => {
+    Object.keys(STUDENT_KEY_MAPPINGS).forEach((id) => {
       const element = document.getElementById(id);
       if (element) {
-        if (id === 'enrollmentNotes') {
-          element.innerHTML = clearAll || !student || student[elementKeyMappings[id]] === undefined ? "" : student[elementKeyMappings[id]];
-        } else {
-          element.value = clearAll || !student || student[elementKeyMappings[id]] === undefined ? "" : student[elementKeyMappings[id]];
-        }
-        
-        // Trigger input event for input elements
-        if (['dateOfBirth', 'parentGuardianPhone', 'parentGuardianEmail', 'currentTeacherEmail', 'parentGuardianName', 'currentSchoolName', 'currentTeacherName', 'evaluationDueDate', 'screeningDate', 'screeningTime', 'adminSubmissionDate', 'acceptanceDueDate'].includes(id)) {
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        
-        // Trigger change event for select elements
-        if (['gender', 'incomingGradeLevel', 'enrollmentManager', 'gradeLevelStatus', 'enrolledInEEC', 'evaluationEmail', 'studentEvaluationForm', 'contactedToSchedule', 'screeningEmail', 'reportCard', 'iepDocumentation', 'screeningFee', 'adminAcceptance', 'acceptanceEmail', 'familyAcceptance', 'blackbaudAccount', 'birthCertificatePassport', 'immunizationRecords', 'admissionContractForm', 'tuitionPaymentForm', 'medicalConsentForm', 'emergencyContactsForm', 'registrationFee'].includes(id)) {
-          element.dispatchEvent(new Event('change', { bubbles: true }));
-        }
+        element.value = clearAll || !student || student[STUDENT_KEY_MAPPINGS[id]] === undefined ? "" : student[STUDENT_KEY_MAPPINGS[id]];
       }
     });
+
+    // Update colors in student profile fields
+    updateColors();
 
     const saveChangesButton = document.getElementById('saveChangesButton');
     saveChangesButton.classList.remove('tool-bar-button-unsaved');
     saveFlag = true;
-    previousStudent = selectedStudent;
+    previousStudentID = selectedStudentID;
   }
 
-  function sortStudentData() {
-    STUDENT_DATA.sort((a, b) => {
-      const nameA = a['Student Name'];
-      const nameB = b['Student Name'];
-      return nameA.localeCompare(nameB);
+  function getIDCache() {
+    return new Promise((resolve, reject) => {  // Add reject parameter
+      google.script.run
+        .withSuccessHandler((idCache) => {
+          // Convert to Set for O(1) lookup and find first missing number
+          const idSet = new Set(idCache.map(id => parseInt(id, 10)));
+               
+          // Start from 1 and find first missing number
+          let i = 1;
+          while (idSet.has(i)) i++;
+                
+          // Format and return the result
+          resolve(i.toString().padStart(6, '0'));
+        })
+        .withFailureHandler((error) => {
+          const errorString = String(error);
+                
+          if (errorString.includes("401")) {
+            sessionError();
+          } else {
+            showError("Error: ID_FAILURE");
+          }
+          busyFlag = false;
+          reject(error);  // Reject the promise so the error propagates
+        })
+      .getIDCache();
     });
+  }
+
+  async function getAvailableID() {
+    cachedID = await getIDCache();
   }
 
   function saveAlert() {
@@ -1557,177 +1657,183 @@
   ////////////////////
 
   function showError(errorType, callback = "") {
-    const warningIcon = `<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color);"></i>`;
-    const errorIcon = `<i class="bi bi-x-circle-fill" style="color: var(--error-color);"></i>`;
+    const warningIcon = `<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>`;
+    const errorIcon = `<i class="bi bi-x-circle-fill" style="color: var(--error-color); margin-right: 10px;"></i>`;
     let title;
     let message;
     let button1;
     let button2;
 
     switch (errorType) {
-      case "operationInProgress":
+      case "Error: OPERATION_IN_PROGRESS":
         title = warningIcon + "Operation In Progress";
         message = "Please wait until the operation completes and try again.";
         button1 = "Close";
         break;
       
       // Save errors
-      case "unsavedChanges":
+      case "Error: UNSAVED_CHANGES":
         title = warningIcon + "Unsaved Changes";
-        message = "'" + previousStudent + "' has unsaved changes. Please save the changes and try again.";
+        message = "There are unsaved changes. Please save the changes and try again.";
         button1 = "Close";
         break;
       
       // Add student errors
-      case "missingFirstName":
+      case "Error: MISSING_FIRST_NAME":
         title = warningIcon + "Missing First Name";
         message = "Please enter a first name and try again.";
         button1 = "Close";
         break;
 
-      case "missingLastName":
+      case "Error: MISSING_LAST_NAME":
         title = warningIcon + "Missing Last Name";
         message = "Please enter a last name and try again.";
         button1 = "Close";
         break;
 
-      case "missingGender":
+      case "Error: MISSING_GENDER":
         title = warningIcon + "Missing Gender";
         message = "Please select a gender and try again.";
         button1 = "Close";
         break;
 
-      case "missingDateOfBirth":
+      case "Error: MISSING_DOB":
         title = warningIcon + "Missing Date Of Birth";
         message = "Please enter a date of birth and try again.";
         button1 = "Close";
         break;
 
-      case "missingIncomingGradeLevel":
-        title = warningIcon + "Missing Incoming Grade Level";
-        message = "Please select an incoming grade level and try again.";
+      case "Error: MISSING_INCOMING_GRADE":
+        title = warningIcon + "Missing Incoming Grade";
+        message = "Please select an incoming grade and try again.";
         button1 = "Close";
         break;
 
-      case "missingGradeLevelStatus":
-        title = warningIcon + "Missing Grade Level Status";
-        message = "Please select a grade level status and try again.";
+      case "Error: MISSING_GRADE_STATUS":
+        title = warningIcon + "Missing Grade Status";
+        message = "Please select a grade status and try again.";
         button1 = "Close";
         break;
 
-      case "missingEnrollmentManager":
+      case "Error: MISSING_ENROLLMENT_MANAGER":
         title = warningIcon + "Missing Enrollment Manager";
         message = "Please select an enrollment manager and try again.";
         button1 = "Close";
         break;
 
-      case "missingParentGuardianName":
+      case "Error: MISSING_PARENT_GUARDIAN_NAME":
         title = warningIcon + "Missing Name";
         message = "Please enter a parent/guardian name and try again.";
         button1 = "Close";
         break;
 
-      case "missingParentGuardianPhone":
+      case "Error: MISSING_PARENT_GUARDIAN_PHONE":
         title = warningIcon + "Missing Phone Number";
         message = "Please enter a parent/guardian phone number and try again.";
         button1 = "Close";
         break;
 
-      case "invalidParentGuardianPhone":
+      case "Error: INVALID_PHONE":
         title = warningIcon + "Invalid Phone Number";
         message = "Please check the parent/guardian phone number and try again.";
         button1 = "Close";
         break;
 
-      case "missingParentGuardianEmail":
+      case "Error: MISSING_PARENT_GUARDIAN_EMAIL":
         title = warningIcon + "Missing Email Address";
         message = "Please enter a parent/guardian email address and try again.";
         button1 = "Close";
         break;
 
-      case "invalidParentGuardianEmail":
+      case "Error: INVALID_PARENT_GUARDIAN_EMAIL":
         title = warningIcon + "Invalid Email Address";
         message = "Please check the parent/guardian email address and try again.";
         button1 = "Close";
         break;
 
-      case "missingCurrentSchoolName":
+      case "Error: MISSING_CURRENT_SCHOOL_NAME":
         title = warningIcon + "Missing School Name";
         message = "Please enter a current school name and try again.";
         button1 = "Close";
         break;
 
-      case "missingCurrentTeacherName":
+      case "Error: MISSING_CURRENT_TEACHER_NAME":
         title = warningIcon + "Missing Teacher Name";
         message = "Please enter a current teacher name and try again.";
         button1 = "Close";
         break;
 
-      case "missingCurrentTeacherEmail":
+      case "Error: MISSING_CURRENT_TEACHER_EMAIL":
         title = warningIcon + "Missing Email Address";
         message = "Please enter a current teacher email address and try again.";
         button1 = "Close";
         break;
 
-      case "invalidCurrentTeacherEmail":
+      case "Error: INVALID_CURRENT_TEACHER_EMAIL":
         title = warningIcon + "Invalid Email Address";
         message = "Please check the current teacher email address and try again.";
         button1 = "Close";
         break;
 
-      case "missingEnrolledInEEC":
+      case "Error: MISSING_EEC_STATUS":
         title = warningIcon + "Missing EEC Status";
         message = "Please select the EEC enrollment status and try again.";
         button1 = "Close";
         break;
       
       // Database errors
-      case "missingData":
+      case "Error: MISSING_STUDENT_DATA":
         title = errorIcon + "Data Error";
         message = "No student data found. The operation could not be completed.";
         button1 = "Close";
         break;
 
-      case "missingDatabaseEntry":
+      case "Error: MISSING_MEETING_DATA":
+        title = errorIcon + "Data Error";
+        message = "No meeting data found. The operation could not be completed.";
+        button1 = "Close";
+        break;
+
+      case "Error: MISSING_STUDENT_ENTRY":
         title = errorIcon + "Data Error";
         message = "The student data could not be found in the database. The operation could not be completed.";
         button1 = "Close";
         break;
 
-      case "duplicateDatabaseEntry":
+      case "Error: MISSING_MEETING_ENTRY":
+        title = errorIcon + "Data Error";
+        message = "The meeting data could not be found in the database. The operation could not be completed.";
+        button1 = "Close";
+        break;
+
+      case "Error: DUPLICATE_ENTRY":
         title = errorIcon + "Data Error";
         message = "Duplicate data was found in the database. The operation could not be completed.";
         button1 = "Close";
         break;
 
       // Email errors
-      case "missingEmailRecipient":
+      case "Error: MISSING_RECIPIENT":
         title = warningIcon + "Missing Email Recipient";
         message = "Please enter an email address and try again.";
         button1 = "Close";
         break;
       
-      case "invalidEmail":
+      case "Error: INVALID_EMAIL":
         title = warningIcon + "Invalid Email Address";
         message = "Please check the email address and try again.";
         button1 = "Close";
         break;
 
-      case "missingEmailTemplateData":
+      case "Error: MISSING_TEMPLATE_DATA":
         title = errorIcon + "Email Error";
         message = "Missing email template data. The operation could not be completed.";
         button1 = "Close";
-        break; 
-
-      case "emailQuotaLimit":
-        title = errorIcon + "Email Error";
-        message = "The daily email limit has been reached. Please wait 24 hours before sending your email and try again.";
-        button1 = "Close";
         break;
 
-      case "emailFailure":
+      case "Error: QUOTA_LIMIT":
         title = errorIcon + "Email Error";
-        message = "An unknown error occurred. The operation could not be completed.";
+        message = "The daily email limit has been reached. Please wait 24 hours before sending your email and try again.";
         button1 = "Close";
         break;
       
@@ -1737,12 +1843,63 @@
         message = "An unknown error occurred. The operation could not be completed.";
         button1 = "Close";
         break;
+
+      // Unknown errors
+      case "Error: EMAIL_FAILURE":
+        title = errorIcon + "Email Error";
+        message = "An unknown email error occurred. The operation could not be completed.";
+        button1 = "Close";
+        break;
+      
+      case "Error: EXPORT_FAILURE":
+        title = errorIcon + "Export Error";
+        message = "An unknown error occurred while exporting data. The operation could not be completed.";
+        button1 = "Close";
+        break;
+
+      case "Error: ID_FAILURE":
+        title = errorIcon + "ID Error";
+        message = "An unknown error occurred while fetching ID's. The operation could not be completed.";
+        button1 = "Close";
+        break;
+
+      case "Error: DATABASE_FAILURE":
+        title = errorIcon + "Database Error";
+        message = "An unknown error occurred while connecting with the database. The operation could not be completed.";
+        button1 = "Close";
+        break;
+
+      case "Error: PERMISSION":
+        title = errorIcon + "Permission Error";
+        message = "You do not have permission to modify the database. Please contact your administrator. The operation could not be completed.";
+        button1 = "Close";
+        break;
+
+      default:
+        title = errorIcon + "Error";
+        message = errorType;
+        button1 = "Close";
+        break;
     }
     
     playNotificationSound("alert");
     showModal(title, message, button1, button2);
   }
-  
+
+  async function sessionError() {
+    const errorIcon = `<i class="bi bi-x-circle-fill" style="color: var(--error-color); margin-right: 10px;"></i>`;
+    const title = `${errorIcon}Session Expired`;
+    const message = "The current session has expired. Please sign in with Google and try again.";
+    
+    playNotificationSound("alert");
+    const buttonText = await showModal(title, message, "Cancel", "Sign in");
+       
+    if (buttonText === "Sign in") {
+      const signInUrl = "https://accounts.google.com";
+      const signInTab = window.open(signInUrl, "_blank");
+    }
+  }
+
   /////////////////////
   // DATA VALIDATION //
   /////////////////////
@@ -1799,6 +1956,86 @@
       let amPm = hours >= 12 ? 'PM' : 'AM';
       hours = hours % 12 || 12; // Convert hours to 12-hour format
       return `${hours}:${minutes} ${amPm}`;
+    }
+  }
+
+  function updateColors() {
+    const selectColorElements = document.querySelectorAll('#gender, #dateOfBirth, #incomingGrade, #gradeStatus, #enrollmentManager, #enrolledInEEC, #evaluationDueDate, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningDate, #screeningTime, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminSubmissionDate, #adminAcceptance, #acceptanceDueDate, #acceptanceEmailSent, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
+    const inputColorElements = document.querySelectorAll('#parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail');
+    const noColorElements = document.querySelectorAll('#notes');
+
+    selectColorElements.forEach(element => {
+      element.style.backgroundColor = getColor(element);
+    });
+    
+    inputColorElements.forEach(element => {
+      element.style.backgroundColor = getColor(element);
+    });
+  }
+
+  // Get select box/input box color based on value
+  function getColor(element) {
+    const value = element.value.trim(); // Trim to remove extra spaces
+
+    if (!value) { // Checks for "", null, undefined, 0, etc.
+      return '';
+    }
+
+    // Define patterns for phone and email validation
+    const phonePattern = /^\(\d{3}\) \d{3}-\d{4}$/;
+    const emailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9-]{2,})+$/;
+
+
+    // Validation for phone numbers
+    if (element.id === 'parentGuardianPhone') {
+        if (!phonePattern.test(value)) {
+            return ''; // No color if phone format is invalid
+        }
+        return 'var(--green)'; // Valid phone numbers get green
+    }
+
+    // Validation for emails
+    if (element.id === 'parentGuardianEmail' || element.id === 'currentTeacherEmail') {
+        if (!emailPattern.test(value)) {
+            return ''; // No color if email format is invalid
+        }
+        return 'var(--green)'; // Valid email addresses get green
+    }
+
+    // If the element is an input field but not a phone/email, restrict the color to green
+    if (element.tagName === 'INPUT') {
+        return 'var(--green)';
+    }
+
+    // Check for specific values
+    switch (value) {
+      case "Male":
+        return 'var(--blue)';
+      
+      case "Female":
+        return 'var(--pink)';
+      
+      case "Non-binary":
+        return 'var(--gray)';
+      
+      case "Requested":
+      case "In Progress":
+      case "Pending":
+      case "In Review":
+        return 'var(--orange)';
+      
+      case "Waitlist":
+      case "No":
+      case "Rejected":
+        return 'var(--red)';
+
+      case "N/A":
+      case "Non-binary":
+        return 'var(--gray)';
+      
+      default:
+        // Default color for non-specified cases
+        return 'var(--green)';
     }
   }
   
