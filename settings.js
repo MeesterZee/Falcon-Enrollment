@@ -1,10 +1,11 @@
 <script type="text/javascript">
   // Global variables  
-  // let USER_SETTINGS; // Defined in HTML
-  let SETTINGS;
+  let APP_SETTINGS;
   let EMAIL_TEMPLATE_DATA;
-  let saveFlag = true;
-  let busyFlag = false;
+  
+  // Global flags
+  let saveFlag = true; // True if all changes saved, false if unsaved changes
+  let busyFlag = false; // True if operation in progress, false if no operation in progress
   
   // Initialize application
   // Conversion to async allows for parallel data retrieval from Apps Script
@@ -22,22 +23,22 @@
       page.style.display = 'none';
 
       // Fetch data in parallel (async not needed but allows for future data streams)
-      const [allSettings] = await Promise.all([
+      const [appSettings] = await Promise.all([
         new Promise((resolve, reject) => {
-          google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getSettings();
+          google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).getAppSettings();
         })
       ]);
 
       // Set global variables
-      SETTINGS = allSettings;
+      APP_SETTINGS = appSettings;
 
       // Populate elements with data
       await Promise.all([
-        setEventListeners(),
-        setColorPicker(),
         loadSettings()
       ]);
-    
+
+      setEventListeners();
+          
       console.log("Initialization complete!");
     
     } catch (error) {
@@ -117,7 +118,10 @@
       playNotificationSound("remove");
     });
 
-    document.getElementById('silentModeSwitch').addEventListener('change', saveAlert);
+    document.getElementById('silentModeSwitch').addEventListener('change', function() {
+      USER_SETTINGS.silentMode = this.checked ? 'true' : 'false';
+      saveAlert();
+    });
     
     document.getElementById('templateSubject').addEventListener('input', saveAlert);
     document.getElementById('templateBody').addEventListener('input', saveAlert);
@@ -127,8 +131,63 @@
     console.log("Complete!");
   }
 
+  ///////////////////
+  // LOAD SETTINGS //
+  ///////////////////
+
+  function loadSettings() {
+    console.log("Loading settings...");
+
+    // Appearance
+    setColorPicker();
+    const themeSelect = document.getElementById('theme');
+    const customTheme = document.getElementById('customTheme');
+    themeSelect.value = USER_SETTINGS.theme;
+
+    if (USER_SETTINGS.theme === "custom") {
+      customTheme.style.display = 'block';
+    } else {
+      customTheme.style.display = 'none';
+    }
+
+    // Sound Effects
+    const silentMode = USER_SETTINGS.silentMode === 'true'; // Convert string to boolean
+    document.getElementById('alertSound').value = USER_SETTINGS.alertSound;
+    document.getElementById('emailSound').value = USER_SETTINGS.emailSound;
+    document.getElementById('removeSound').value = USER_SETTINGS.removeSound;
+    document.getElementById('successSound').value = USER_SETTINGS.successSound;
+    document.getElementById('silentModeSwitch').checked = silentMode; // Use boolean to set switch state
+    
+    //School Information
+    document.getElementById('schoolName').value = APP_SETTINGS.schoolSettings.schoolName || '';
+    document.getElementById('schoolYear').value = APP_SETTINGS.schoolSettings.schoolYear || '';
+    
+    //Enrollment Managers
+    document.getElementById('managerName1').value = APP_SETTINGS.managerSettings.enrollmentManager1 || '';
+    document.getElementById('managerName2').value = APP_SETTINGS.managerSettings.enrollmentManager2 || '';
+    document.getElementById('managerName3').value = APP_SETTINGS.managerSettings.enrollmentManager3 || '';
+    document.getElementById('managerName4').value = APP_SETTINGS.managerSettings.enrollmentManager4 || '';
+    document.getElementById('managerName5').value = APP_SETTINGS.managerSettings.enrollmentManager5 || '';
+
+    //Screening Fees
+    document.getElementById('screeningFeeEEC').value = APP_SETTINGS.feeSettings.developmentalScreeningEECFee || '';
+    document.getElementById('screeningFeeTKK').value = APP_SETTINGS.feeSettings.developmentalScreeningSchoolFee || '';
+    document.getElementById('screeningFee18').value = APP_SETTINGS.feeSettings.academicScreeningFee || '';
+    
+    //School Fees
+    document.getElementById('registrationFee').value = APP_SETTINGS.feeSettings.registrationFee || '';
+    document.getElementById('hugFee').value = APP_SETTINGS.feeSettings.hugFee || '';
+    document.getElementById('familyCommitmentFee').value = APP_SETTINGS.feeSettings.familyCommitmentFee || '';
+    document.getElementById('flashFee').value = APP_SETTINGS.feeSettings.flashFee || '';
+    document.getElementById('withdrawalFee').value = APP_SETTINGS.feeSettings.withdrawalFee || '';
+
+    loadEmailTemplateSettings(APP_SETTINGS.emailTemplateSettings);
+
+    console.log("Complete!");
+  }
+
   function setColorPicker() {
-    const themeType = document.getElementById('themeTypeSelect');
+    const themeTypeSelect = document.getElementById('themeTypeSelect');
     const primaryColorPicker = document.getElementById('primaryColorPicker');
     const accentColorPicker = document.getElementById('accentColorPicker');
 
@@ -137,231 +196,249 @@
     accentColorPicker.value = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
   }
 
-  function loadSettings(settings) {
-    console.log("Loading settings...");
-
-    // Appearance
-    const themeSelect = document.getElementById('theme');
-    const customTheme = document.getElementById('customTheme');
-
-    if (USER_SETTINGS.theme === "custom") {
-      customTheme.style.display = 'block';
-    } else {
-      customTheme.style.display = 'none';
-    }
-
-    themeSelect.value = USER_SETTINGS.theme;
-
-    // Sound Effects
-    const silentModeChecked = USER_SETTINGS.silentMode === 'true'; // Convert string to boolean
-    document.getElementById('silentModeSwitch').checked = silentModeChecked;
-    document.getElementById('alertSound').value = USER_SETTINGS.alertSound;
-    document.getElementById('emailSound').value = USER_SETTINGS.emailSound;
-    document.getElementById('removeSound').value = USER_SETTINGS.removeSound;
-    document.getElementById('successSound').value = USER_SETTINGS.successSound;
-    
-    //School Information
-    document.getElementById('schoolName').value = SETTINGS['School Name'];
-    document.getElementById('enrollmentYear').value = SETTINGS['School Year'];
-    
-    //Enrollment Managers
-    document.getElementById('managerName1').value = SETTINGS['Enrollment Manager 1'];
-    document.getElementById('managerName2').value = SETTINGS['Enrollment Manager 2'];
-    document.getElementById('managerName3').value = SETTINGS['Enrollment Manager 3'];
-    document.getElementById('managerName4').value = SETTINGS['Enrollment Manager 4'];
-    document.getElementById('managerName5').value = SETTINGS['Enrollment Manager 5'];
-
-    //Screening Fees
-    document.getElementById('screeningFeeEEC').value = SETTINGS['Developmental Screening Fee (EEC)'];
-    document.getElementById('screeningFeeTKK').value = SETTINGS['Developmental Screening Fee (TK/K)'];
-    document.getElementById('screeningFee18').value = SETTINGS['Academic Screening Fee'];
-    
-    //School Fees
-    document.getElementById('registrationFee').value = SETTINGS['Registration Fee'];
-    document.getElementById('hugFee').value = SETTINGS['HUG Fee'];
-    document.getElementById('familyCommitmentFee').value = SETTINGS['Family Commitment Fee'];
-    document.getElementById('flashFee').value = SETTINGS['FLASH Processing Fee'];
-    document.getElementById('withdrawalFee').value = SETTINGS['Withdrawal Processing Fee'];
-
-    // Email Templates
-    EMAIL_TEMPLATE_DATA = {
+  function loadEmailTemplateSettings(emailTemplateSettings) {
+    EMAIL_TEMPLATE_SETTINGS = {
       waitlist: {
-        subject: SETTINGS['Waitlist Subject'],
-        body: SETTINGS['Waitlist Body'],
+        subject: emailTemplateSettings.waitlist.subject || '',
+        body: emailTemplateSettings.waitlist.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
       evaluation: {
-        subject: SETTINGS['Evaluation Subject'],
-        body: SETTINGS['Evaluation Body'],
+        subject: emailTemplateSettings.evaluation.subject || '',
+        body: emailTemplateSettings.evaluation.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
-      eecScreening: {
-        subject: SETTINGS['Screening (EEC) Subject'],
-        body: SETTINGS['Screening (EEC) Body'],
+      screeningEEC: {
+        subject: emailTemplateSettings.screeningEEC.subject || '',
+        body: emailTemplateSettings.screeningEEC.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
-      screening: {
-        subject: SETTINGS['Screening (School) Subject'],
-        body: SETTINGS['Screening (School) Body'],
+      screeningSchool: {
+        subject: emailTemplateSettings.screeningSchool.subject || '',
+        body: emailTemplateSettings.screeningSchool.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
       acceptance: {
-        subject: SETTINGS['Acceptance Subject'],
-        body: SETTINGS['Acceptance Body'],
+        subject: emailTemplateSettings.acceptance.subject || '',
+        body: emailTemplateSettings.acceptance.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
       acceptanceConditional: {
-        subject: SETTINGS['Acceptance (Conditional) Subject'],
-        body: SETTINGS['Acceptance (Conditional) Body'],
+        subject: emailTemplateSettings.acceptanceConditional.subject || '',
+        body: emailTemplateSettings.acceptanceConditional.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
       rejection: {
-        subject: SETTINGS['Rejection Subject'],
-        body: SETTINGS['Rejection Body'],
+        subject: emailTemplateSettings.rejection.subject || '',
+        body: emailTemplateSettings.rejection.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
       completion: {
-        subject: SETTINGS['Completion Subject'],
-        body: SETTINGS['Completion Body'],
+        subject: emailTemplateSettings.completion.subject || '',
+        body: emailTemplateSettings.completion.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       }
     };
 
-    let templateTypeSelect = document.getElementById('templateType');
-    let templateSubjectInput = document.getElementById('templateSubject');
-    let templateBodyInput = document.getElementById('templateBody');
+    // Load initial email template settings into UI
+    const templateTypeSelect = document.getElementById('templateType');
+    const templateSubjectInput = document.getElementById('templateSubject');
+    const templateBodyInput = document.getElementById('templateBody');
 
-    // Set the default template type to "waitlist"
-    let defaultTemplate = EMAIL_TEMPLATE_DATA['waitlist'];
-    defaultTemplate.unsavedSubject = defaultTemplate.subject;
-    defaultTemplate.unsavedBody = defaultTemplate.body;
+    // Set the default template type to "referral"
+    const defaultTemplate = EMAIL_TEMPLATE_SETTINGS.waitlist;
     templateSubjectInput.value = defaultTemplate.subject;
     templateBodyInput.innerHTML = defaultTemplate.body;
 
+    // Update unsaved subject on input
     templateSubjectInput.addEventListener('input', function() {
-      let selectedTemplate = EMAIL_TEMPLATE_DATA[templateTypeSelect.value];
+      const selectedTemplate = EMAIL_TEMPLATE_SETTINGS[templateTypeSelect.value];
       if (selectedTemplate) {
         selectedTemplate.unsavedSubject = templateSubjectInput.value;
       }
     });
 
+    // Update unsaved body on input
     templateBodyInput.addEventListener('input', function() {
-      let selectedTemplate = EMAIL_TEMPLATE_DATA[templateTypeSelect.value];
+      const selectedTemplate = EMAIL_TEMPLATE_SETTINGS[templateTypeSelect.value];
       if (selectedTemplate) {
         selectedTemplate.unsavedBody = templateBodyInput.innerHTML;
       }
     });
 
+    // Handle template type change
     templateTypeSelect.addEventListener('change', function() {
-      let selectedTemplate = EMAIL_TEMPLATE_DATA[templateTypeSelect.value];
+      const selectedTemplate = EMAIL_TEMPLATE_SETTINGS[templateTypeSelect.value];
       if (selectedTemplate) {
         templateSubjectInput.value = selectedTemplate.unsavedSubject || selectedTemplate.subject;
         templateBodyInput.innerHTML = selectedTemplate.unsavedBody || selectedTemplate.body;
       }
     });
-
-    console.log("Complete!");
   }
+
+  ///////////////////
+  // SAVE SETTINGS //
+  ///////////////////
 
   function saveSettings() {
     if (busyFlag) {
-      showError("operationInProgress");
+      showError("Error: OPERATION_IN_PROGRESS");
       busyFlag = false;
       return;
     }
-    
+
+    showToast("", "Saving changes...", 5000);
     busyFlag = true;
-    saveChangesButton.classList.remove('tool-bar-button-unsaved');
-
-    const header = document.getElementById('header-text');
-    const enrollmentYear = document.getElementById('enrollmentYear').value;
-    const themeSetting = document.getElementById('theme').value;
-    const silentModeSetting = document.getElementById('silentModeSwitch').checked;
-    const alertSound = document.getElementById('alertSound').value;
-    const emailSound = document.getElementById('emailSound').value;
-    const removeSound = document.getElementById('removeSound').value;
-    const successSound = document.getElementById('successSound').value;
-
-    EMAIL_TEMPLATE_DATA.waitlist.subject = EMAIL_TEMPLATE_DATA.waitlist.unsavedSubject;
-    EMAIL_TEMPLATE_DATA.waitlist.body = EMAIL_TEMPLATE_DATA.waitlist.unsavedBody;
     
-    const schoolSettings = [[
-      document.getElementById('schoolName').value,
-      enrollmentYear
-    ]];
+    appSettings = getAppSettings();
+    userSettings = getUserSettings();
+    
+    google.script.run
+      .withSuccessHandler(() => {
+        APP_SETTINGS = appSettings; // Save to global settings
+        USER_SETTINGS = userSettings; // Save to global user settings
 
-    const managerSettings = [[
-      document.getElementById('managerName1').value,
-      document.getElementById('managerName2').value,
-      document.getElementById('managerName3').value,
-      document.getElementById('managerName4').value,
-      document.getElementById('managerName5').value
-    ]];
-
-    const feeSettings = [[
-      parseFloat(document.getElementById('screeningFeeEEC').value.replace(/[^\d.]/g, '')),
-      parseFloat(document.getElementById('screeningFeeTKK').value.replace(/[^\d.]/g, '')),
-      parseFloat(document.getElementById('screeningFee18').value.replace(/[^\d.]/g, '')),
-      parseFloat(document.getElementById('registrationFee').value.replace(/[^\d.]/g, '')),
-      parseFloat(document.getElementById('hugFee').value.replace(/[^\d.]/g, '')),
-      parseFloat(document.getElementById('familyCommitmentFee').value.replace(/[^\d.]/g, '')),
-      parseFloat(document.getElementById('flashFee').value.replace(/[^\d.]/g, '')),
-      parseFloat(document.getElementById('withdrawalFee').value.replace(/[^\d.]/g, ''))
-    ]];
-
-    Object.keys(EMAIL_TEMPLATE_DATA).forEach(key => {
-      if (EMAIL_TEMPLATE_DATA[key].unsavedSubject !== "" || EMAIL_TEMPLATE_DATA[key].unsavedBody !== "") {
-        if (EMAIL_TEMPLATE_DATA[key].unsavedSubject !== "") {
-          EMAIL_TEMPLATE_DATA[key].subject = EMAIL_TEMPLATE_DATA[key].unsavedSubject;
+        // Update the UI
+        setTheme();
+        setColorPicker();
+        document.getElementById('header-text').innerText = "Falcon Enrollment - " + APP_SETTINGS.schoolSettings.schoolYear;
+    
+        saveChangesButton.classList.remove('tool-bar-button-unsaved');
+        playNotificationSound("success");
+        showToast("", "Settings saved!", 5000);
+        saveFlag = true;
+        busyFlag = false;
+      })
+      .withFailureHandler((error) => {
+        const errorString = String(error);
+        
+        if (errorString.includes("401")) {
+          sessionError();
+        } else {
+          showError("Error: SAVE_FAILURE");
         }
-        if (EMAIL_TEMPLATE_DATA[key].unsavedBody !== "") {
-          EMAIL_TEMPLATE_DATA[key].body = EMAIL_TEMPLATE_DATA[key].unsavedBody;
-        }
+        
+        saveFlag = false;
+        busyFlag = false;
+      })
+    .writeSettings(userSettings, appSettings);
+  }
+
+  function getUserSettings() {
+    const theme = document.getElementById('theme').value;
+    let customThemeType;
+    let customThemePrimaryColor;
+    let customThemeAccentColor;
+
+    if (theme === 'custom') {
+      customThemeType = document.getElementById('themeTypeSelect').value;
+      customThemePrimaryColor = document.getElementById('primaryColorPicker').value;
+      customThemeAccentColor = document.getElementById('accentColorPicker').value;
+    } else {
+      customThemeType = '';
+      customThemePrimaryColor = '';
+      customThemeAccentColor = '';
+    }
+    
+    return {
+      theme: theme,
+      customThemeType: customThemeType, 
+      customThemePrimaryColor: customThemePrimaryColor,
+      customThemeAccentColor: customThemeAccentColor,
+      alertSound: document.getElementById('alertSound').value,
+      emailSound: document.getElementById('emailSound').value,
+      removeSound: document.getElementById('removeSound').value,
+      successSound: document.getElementById('successSound').value,
+      silentMode: document.getElementById('silentModeSwitch').checked ? 'true' : 'false'
+    };
+  }
+
+  function getAppSettings() {
+    // Get school settings    
+    const schoolSettings = {
+      schoolName: document.getElementById('schoolName').value,
+      schoolYear: document.getElementById('schoolYear').value
+    };
+
+    // Get manager settings
+    const managerSettings = {
+      enrollmentManager1: document.getElementById('managerName1').value,
+      enrollmentManager2: document.getElementById('managerName2').value,
+      enrollmentManager3: document.getElementById('managerName3').value,
+      enrollmentManager4: document.getElementById('managerName4').value,
+      enrollmentManager5: document.getElementById('managerName5').value
+    };
+
+    // Fee settings
+    const feeSettings = {
+      developmentalScreeningEECFee: document.getElementById('screeningFeeEEC').value,
+      developmentalScreeningSchoolFee: document.getElementById('screeningFeeTKK').value,
+      academicScreeningFee: document.getElementById('screeningFee18').value,
+      registrationFee: document.getElementById('registrationFee').value,
+      hugFee: document.getElementById('hugFee').value,
+      familyCommitmentFee: document.getElementById('familyCommitmentFee').value,
+      flashFee: document.getElementById('flashFee').value,
+      withdrawalFee: document.getElementById('withdrawalFee').value
+    };
+
+    // Get email template settings
+    Object.keys(EMAIL_TEMPLATE_SETTINGS).forEach((key) => {
+      const template = EMAIL_TEMPLATE_SETTINGS[key];
+      if (template.unsavedSubject !== "" || template.unsavedBody !== "") {
+        template.subject = template.unsavedSubject || template.subject;
+        template.body = template.unsavedBody || template.body;
       }
     });
+    
+    const emailTemplateSettings = {
+      waitlist: {
+        subject: EMAIL_TEMPLATE_SETTINGS.waitlist.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.waitlist.body
+      },
+      evaluation: {
+        subject: EMAIL_TEMPLATE_SETTINGS.evaluation.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.evaluation.body
+      },
+      screeningEEC: {
+        subject: EMAIL_TEMPLATE_SETTINGS.screeningEEC.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.screeningEEC.body
+      },
+      screeningSchool: {
+        subject: EMAIL_TEMPLATE_SETTINGS.screeningSchool.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.screeningSchool.body
+      },
+      acceptance: {
+        subject: EMAIL_TEMPLATE_SETTINGS.acceptance.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.acceptance.body
+      },
+      acceptanceConditional: {
+        subject: EMAIL_TEMPLATE_SETTINGS.acceptanceConditional.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.acceptanceConditional.body
+      },
+      rejection: {
+        subject: EMAIL_TEMPLATE_SETTINGS.rejection.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.rejection.body
+      },
+      completion: {
+        subject: EMAIL_TEMPLATE_SETTINGS.completion.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.completion.body
+      }
+    };
 
-    const emailTemplateSubject = [[
-      EMAIL_TEMPLATE_DATA.waitlist.subject, 
-      EMAIL_TEMPLATE_DATA.evaluation.subject, 
-      EMAIL_TEMPLATE_DATA.eecScreening.subject, 
-      EMAIL_TEMPLATE_DATA.screening.subject, 
-      EMAIL_TEMPLATE_DATA.acceptance.subject, 
-      EMAIL_TEMPLATE_DATA.acceptanceConditional.subject, 
-      EMAIL_TEMPLATE_DATA.rejection.subject,
-      EMAIL_TEMPLATE_DATA.completion.subject
-    ]];
-    
-    const emailTemplateBody = [[
-      EMAIL_TEMPLATE_DATA.waitlist.body,
-      EMAIL_TEMPLATE_DATA.evaluation.body,
-      EMAIL_TEMPLATE_DATA.eecScreening.body,
-      EMAIL_TEMPLATE_DATA.screening.body,
-      EMAIL_TEMPLATE_DATA.acceptance.body,
-      EMAIL_TEMPLATE_DATA.acceptanceConditional.body, 
-      EMAIL_TEMPLATE_DATA.rejection.body,
-      EMAIL_TEMPLATE_DATA.completion.body
-    ]];
-    
-    //Update the page header
-    saveFlag = true;
-    saveTheme();
-    setColorPicker();
-    saveSound();
-    header.innerHTML = "Falcon Enrollment - " + enrollmentYear;
-    playNotificationSound("success");
-    showToast("", "Settings saved!", 5000);
-    
-    google.script.run.writeSettings(USER_SETTINGS, schoolSettings, managerSettings, feeSettings, emailTemplateSubject, emailTemplateBody);
-
-    busyFlag = false;
+    return {
+      schoolSettings,
+      managerSettings,
+      feeSettings,
+      emailTemplateSettings
+    };
   }
 
   ///////////////////////
@@ -369,22 +446,49 @@
   ///////////////////////
 
   function showError(errorType, callback = "") {
-    let icon = `<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color);"></i>`;
+    const warningIcon = `<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>`;
+    const errorIcon = `<i class="bi bi-x-circle-fill" style="color: var(--error-color); margin-right: 10px;"></i>`;
     let title;
     let message;
     let button1;
     let button2;
 
     switch (errorType) {
-      case "operationInProgress":
-        title = icon + "Error";
-        message = "Operation currently in progress. Please wait until the operation completes and try again.";
+      case "Error: OPERATION_IN_PROGRESS":
+        title = warningIcon + "Operation In Progress";
+        message = "Please wait until the operation completes and try again.";
+        button1 = "Close";
+        break;
+
+      case "Error: SAVE_FAILURE":
+        title = errorIcon + "Save Error";
+        message = "An unknown error occurred while saving the settings. The operation could not be completed.";
+        button1 = "Close";
+        break;
+      
+      default:
+        title = errorIcon + "Error";
+        message = errorType;
         button1 = "Close";
         break;
     }
 
     playNotificationSound("alert");
     showModal(title, message, button1, button2);
+  }
+
+  async function sessionError() {
+    const errorIcon = `<i class="bi bi-x-circle-fill" style="color: var(--error-color); margin-right: 10px;"></i>`;
+    const title = `${errorIcon}Session Expired`;
+    const message = "The current session has expired. Please sign in with Google and try again.";
+    
+    playNotificationSound("alert");
+    const buttonText = await showModal(title, message, "Cancel", "Sign in");
+       
+    if (buttonText === "Sign in") {
+      const signInUrl = "https://accounts.google.com";
+      const signInTab = window.open(signInUrl, "_blank");
+    }
   }
   
   function saveAlert() {
