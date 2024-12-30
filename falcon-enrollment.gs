@@ -1,4 +1,4 @@
-/** Falcon Enrollment - Web App v3.1 **/
+/** Falcon Enrollment - Web App v4.0 **/
 /** Falcon EDU © 2023-2025 All Rights Reserved **/
 /** Created by: Nick Zagorin **/
 
@@ -6,8 +6,7 @@
 // GLOBAL CONSTANTS //
 //////////////////////
 
-const ACTIVE_DATA_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Active Data');
-const ARCHIVE_DATA_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Archive Data');
+const STUDENT_DATA_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Student Data');
 const CONSOLE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Console');
 
 ///////////////////////////
@@ -16,27 +15,17 @@ const CONSOLE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Cons
 
 /** Render the web app in the browser **/
 function doGet(e) {
-  const userSettings = getUserProperties();
+  const userSettings = getUserSettings();
   const page = e.parameter.page || "dashboard";
   const htmlTemplate = HtmlService.createTemplateFromFile(page);
-
+  
   // Inject the user properties into the HTML
   htmlTemplate.userSettings = JSON.stringify(userSettings);
 
-  // Evaluate and prepare the HTML content
-  const htmlContent = htmlTemplate.evaluate().getContent();
-  const htmlOutput = HtmlService.createHtmlOutput(htmlContent);
-
-  //Replace {{NAVBAR}} in HTML with the navigation bar content
-  htmlOutput.setContent(htmlOutput.getContent().replace("{{NAVBAR}}",getNavbar(page)));
-  
-  // Set the tab favicon
-  htmlOutput.setFaviconUrl("https://meesterzee.github.io/FalconEDU/images/Falcon%20EDU%20Favicon%2032x32.png");
-  
-  // Set the tab title
-  htmlOutput.setTitle("Falcon Enrollment");
-  
-  return htmlOutput;
+  return HtmlService.createHtmlOutput(htmlTemplate.evaluate().getContent())
+    .setContent(htmlTemplate.evaluate().getContent().replace("{{NAVBAR}}", getNavbar(page)))
+    .setFaviconUrl("https://meesterzee.github.io/FalconEDU/images/Falcon%20EDU%20Favicon%2032x32.png")
+    .setTitle("Falcon Enrollment");
 }
 
 /** Create navigation/menu bar **/
@@ -44,8 +33,10 @@ function getNavbar(activePage) {
   const dashboardURL = getScriptURL();
   const scheduleURL = getScriptURL("page=schedule");
   const settingsURL = getScriptURL("page=settings");
-  const enrollmentYear = CONSOLE_SHEET.getRange('B3').getDisplayValue();
-  const headerText = "Falcon Enrollment - " + enrollmentYear;
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentYear = new Date().getFullYear();
+  const schoolYear = scriptProperties.getProperty('schoolYear') || (currentYear + '-' + (currentYear + 1));
+  const headerText = "Falcon Enrollment - " + schoolYear;
 
   let navbar = 
     `<div class="menu-bar">
@@ -84,7 +75,7 @@ function getNavbar(activePage) {
 
       function showAbout() {
         const title = "<i class='bi bi-info-circle'></i>About Falcon Enrollment";
-        const message = "Web App Version: 3.1<br>Build: 25100124 <br><br>Created by: Nick Zagorin<br>© 2023-2025 - All rights reserved";
+        const message = "Web App Version: 4.0<br>Build: 26.122924 <br><br>Created by: Nick Zagorin<br>© 2023-2025 - All rights reserved";
         showModal(title, message, "Close");
       }
     </script>
@@ -115,301 +106,249 @@ function include(filename) {
 // DASHBOARD FUNCTIONS //
 /////////////////////////
 
-/** Get active data */
-function getActiveData() {
-  const lastRow = ACTIVE_DATA_SHEET.getLastRow();
+function getStudentData() {
+  const test = getSheetData(STUDENT_DATA_SHEET);
+  return getSheetData(STUDENT_DATA_SHEET);
+}
+
+/** Get sheet data **/
+function getSheetData(sheet) {
+  const lastRow = sheet.getLastRow();
   
   // Return empty array if there are no data rows
   if (lastRow <= 1) {
     return [];
   }
 
-  const dataRange = ACTIVE_DATA_SHEET.getRange(2, 1, lastRow - 1, ACTIVE_DATA_SHEET.getLastColumn());
-  const data = dataRange.getValues();
+  // Get all headers and data in just two API calls
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getDisplayValues()[0];
+  const data = sheet.getRange(2, 1, lastRow - 1, sheet.getLastColumn()).getDisplayValues();
   
-  const headers = ACTIVE_DATA_SHEET.getRange(1, 1, 1, ACTIVE_DATA_SHEET.getLastColumn()).getValues()[0];
-  let objects = [];
-  
-  for (let i = 0; i < data.length; i++) {
-    let obj = {};
-    for (let j = 0; j < headers.length; j++) {
-      obj[headers[j]] = ACTIVE_DATA_SHEET.getRange(i + 2, j + 1).getDisplayValue();
-    }
-    objects.push(obj);
-  }
-
-  return objects;
+  // Map the data to objects using array methods
+  return data.map(row => {
+    return headers.reduce((obj, header, index) => {
+      obj[header] = row[index];
+      return obj;
+    }, {});
+  });
 }
 
-/** Get archive data */
-function getArchiveData() {
-  const lastRow = ARCHIVE_DATA_SHEET.getLastRow();
-  
-  // Return empty array if there are no data rows
-  if (lastRow <= 1) {
-    return [];
-  }
-
-  const dataRange = ARCHIVE_DATA_SHEET.getRange(2, 1, lastRow - 1, ARCHIVE_DATA_SHEET.getLastColumn());
-  const data = dataRange.getValues();
-  
-  const headers = ARCHIVE_DATA_SHEET.getRange(1, 1, 1, ARCHIVE_DATA_SHEET.getLastColumn()).getValues()[0];
-  let objects = [];
-  
-  for (let i = 0; i < data.length; i++) {
-    let obj = {};
-    for (let j = 0; j < headers.length; j++) {
-      obj[headers[j]] = ARCHIVE_DATA_SHEET.getRange(i + 2, j + 1).getDisplayValue();
+/** Get ID cache **/
+function getIDCache() {
+  const sheets = [
+    STUDENT_DATA_SHEET
+  ];
+    
+  const ids = sheets.reduce((acc, sheet) => {
+    const lastRow = sheet.getLastRow();
+    if (lastRow > 1) {
+      const rangeValues = sheet.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
+      acc.push(...rangeValues.flat());
     }
-    objects.push(obj);
-  }
+    return acc;
+  }, []);
 
-  return objects;
+  return ids;
 }
+
+////////////////////
+// DATA FUNCTIONS //
+////////////////////
 
 /** Save student data */
-function saveStudentData(dataSet, studentData) {
-  let sheet;
-
-  if (dataSet === "active") {
-    sheet = ACTIVE_DATA_SHEET;
-  } else {
-    sheet = ARCHIVE_DATA_SHEET;
+function saveStudentData(studentData) {
+  const studentID = studentData[0][0]; // First column contains the student ID
+  const studentStatus = studentData[0][1]; // Second column contains the student status
+  const studentDataSheet = STUDENT_DATA_SHEET;
+  
+  // Get all student data at once
+  const studentDataSheetLastRow = studentDataSheet.getLastRow();
+  if (studentDataSheetLastRow <= 1) {
+    throw new Error('MISSING_STUDENT_DATA');
   }
   
-  const sheetLastRow = sheet.getLastRow();
-  const studentName = studentData[0][0];
-
-  if (sheetLastRow > 1) {
-    let dataRange = sheet.getRange(2, 1, sheetLastRow - 1, 1).getDisplayValues();
-    let foundIndex = -1;
-    let duplicate = false;
-
-    // First pass: check for duplicates
-    for (let i = 0; i < dataRange.length; i++) {
-      if (dataRange[i][0] === studentName) {
-        if (foundIndex === -1) {
-          foundIndex = i;
-        } else {
-          duplicate = true;
-          break;
-        }
-      }
-    }
-
-    // If duplicates found, return error
-    if (duplicate) {
-      return "duplicateDatabaseEntry";
-    }
-    
-    // If no duplicates found but student is found, update the data
-    if (foundIndex !== -1) {
-      const range = sheet.getRange(foundIndex + 2, 1, 1, studentData[0].length); // Assuming studentData[0].length is the number of columns
-      range.setValues(studentData);
-      return "saveChangesSuccess";
-    }
+  const allStudentData = studentDataSheet.getRange(2, 1, studentDataSheetLastRow - 1, studentData[0].length).getDisplayValues();
+  
+  // Check for duplicate student ID's
+  const duplicateCount = allStudentData.filter(row => row[0] === studentID).length;
+  if (duplicateCount > 1) {
+    throw new Error('DUPLICATE_ENTRY');
   }
 
-  // If the student is not found, return error
-  return "missingDatabaseEntry";
-}
-
-/** Add student data */
-function addStudentData(studentData) {
-  const activeLastRow = ACTIVE_DATA_SHEET.getLastRow();
-  const studentName = studentData[0];
-
-  // Check for duplicate student
-  if (activeLastRow > 1) {
-    const activeRange = ACTIVE_DATA_SHEET.getRange(2, 1, activeLastRow - 1, 1).getDisplayValues();
-    const duplicate = activeRange.some(row => row[0] === studentName);
-    if (duplicate) {
-      return false;
-    }
+  // Find student by ID
+  const studentIndex = allStudentData.findIndex(row => row[0] === studentID);
+  if (studentIndex === -1) {
+    throw new Error('MISSING_STUDENT_ENTRY');
   }
 
-  // If duplicate student not found, proceed with adding the student
-  ACTIVE_DATA_SHEET.appendRow(studentData); 
-  ACTIVE_DATA_SHEET.getRange(2, 1, ACTIVE_DATA_SHEET.getLastRow() - 1, ACTIVE_DATA_SHEET.getLastColumn()).sort({ column: 1, ascending: true });
+  // Validate student status
+  const currentStatus = allStudentData[studentIndex][1];
+  if (currentStatus !== studentStatus) {
+    throw new Error('MISSING_STUDENT_ENTRY');
+  }
+  
+  // Update student data
+  studentDataSheet.getRange(studentIndex + 2, 1, 1, studentData[0].length).setValues(studentData);
+
+  // Format the sheet
+  studentDataSheet.getRange('A:A').setNumberFormat('000000'); // Set ID format
+  studentDataSheet.getRange('U:U').setNumberFormat('HH:mm'); // Set time format
+  
   return true;
 }
 
-/** Remove student from active data and add to archive data */
-function removeStudentData(student) {
-  const activeLastRow = ACTIVE_DATA_SHEET.getLastRow();
-  const archiveLastRow = ARCHIVE_DATA_SHEET.getLastRow();
 
-  // Check for duplicate student in the archive
-  if (archiveLastRow > 1) {
-    const archiveDataRange = ARCHIVE_DATA_SHEET.getRange(2, 1, archiveLastRow - 1, 1).getDisplayValues();
-    const duplicate = archiveDataRange.some(row => row[0] === student);
-    if (duplicate) {
-      return "duplicateDatabaseEntry";
-    }
+/** Update student status:  active/archive **/
+function updateStudentStatus(studentID, studentStatus) {
+  const studentDataSheet = STUDENT_DATA_SHEET;
+
+  // Get all student data at once
+  const studentDataSheetLastRow = studentDataSheet.getLastRow();
+  if (studentDataSheetLastRow <= 1) {
+    throw new Error('MISSING_STUDENT_DATA');
   }
 
-  // Check if active data is empty
-  if (activeLastRow <= 1) {
-    return "missingDatabaseEntry";
-  }
-  
-  // Get all data from the active sheet
-  const activeDataRange = ACTIVE_DATA_SHEET.getRange(2, 1, activeLastRow - 1, ACTIVE_DATA_SHEET.getLastColumn()).getDisplayValues();
+  const allStudentData = studentDataSheet.getRange(2, 1, studentDataSheetLastRow - 1, studentDataSheet.getLastColumn()).getDisplayValues();
 
-  let studentData = null;
-  let studentRowIndex = -1;
-
-  // Find the student in the active data
-  for (let i = 0; i < activeDataRange.length; i++) {
-    if (activeDataRange[i][0] === student) {
-      studentData = activeDataRange[i];
-      studentRowIndex = i + 2;  // Account for header row
-      break;
-    }
+  // Check for duplicate student ID's
+  const duplicateCount = allStudentData.filter(row => row[0] === studentID).length;
+  if (duplicateCount > 1) {
+    throw new Error('DUPLICATE_ENTRY');
   }
-  
-  if (studentData) {
-    // Remove the student from the active sheet
-    ACTIVE_DATA_SHEET.deleteRow(studentRowIndex);
 
-    // Append the student data to the archive sheet
-    ARCHIVE_DATA_SHEET.appendRow(studentData);
-    
-    // Re-check archive last row since it has been updated
-    const newArchiveLastRow = ARCHIVE_DATA_SHEET.getLastRow();
-    
-    // Sort the archive sheet if there are more than one rows of data
-    if (newArchiveLastRow > 2) {
-      const archiveDataToSort = ARCHIVE_DATA_SHEET.getRange(2, 1, newArchiveLastRow - 1, ARCHIVE_DATA_SHEET.getLastColumn()).getDisplayValues();
-      archiveDataToSort.sort((a, b) => a[0].localeCompare(b[0]));
-      ARCHIVE_DATA_SHEET.getRange(2, 1, newArchiveLastRow - 1, ARCHIVE_DATA_SHEET.getLastColumn()).setValues(archiveDataToSort);
-    }
-    
-    return "archiveSuccess"; // Exit the loop once the student is found and processed
-  } else {
-    // If the student is not found, return error
-    return "missingDatabaseEntry";
+  // Find student by ID
+  const studentIndex = allStudentData.findIndex(row => row[0] === studentID);
+  if (studentIndex === -1) {
+    throw new Error('MISSING_STUDENT_ENTRY');
   }
+
+  // Validate student status
+  const currentStatus = allStudentData[studentIndex][1];
+  if (currentStatus === studentStatus) {
+    throw new Error('MISSING_STUDENT_ENTRY');
+  }
+
+  // Update student status
+  studentDataSheet.getRange(studentIndex + 2, 2).setValue(studentStatus);
+
+  return true;
 }
 
-/** Rename student in data */
-function renameStudent(dataSet, oldStudentName, newStudentName) {
-  let sheet;
+/** Add student data **/
+function addStudentData(studentData) {
+  const studentID = studentData[0][0]; // First column contains the student ID
+  const studentDataSheet = STUDENT_DATA_SHEET;
+    
+  // Check for duplicates only if there's existing data
+  let studentDataSheetLastRow = studentDataSheet.getLastRow();
+  let studentDataSheetLastColumn = studentDataSheet.getLastColumn();
 
-  if (dataSet === "active") {
-    sheet = ACTIVE_DATA_SHEET;
-  } else {
-    sheet = ARCHIVE_DATA_SHEET;
-  }
-  
-  // Check for duplicate student
-  const sheetLastRow = sheet.getLastRow();
-  let dataRange;
-
-  if (sheetLastRow > 1) {
-    dataRange = sheet.getRange(2, 1, sheetLastRow - 1, 1).getDisplayValues();
-    const duplicate = dataRange.some(row => row[0] === newStudentName);
-    if (duplicate) {
-      return "duplicateDatabaseEntry";
-    }
-  } else {
-    return "missingDatabaseEntry";
-  }
-  
-  for (let i = 0; i < dataRange.length; i++) {
-    if (dataRange[i][0] === oldStudentName) {
-      sheet.getRange(i + 2, 1).setValue(newStudentName);
-      sheet.getRange(2, 1, sheetLastRow - 1, sheet.getLastColumn()).sort({ column: 1, ascending: true });
-      return "renameSuccess";
+  if (studentDataSheetLastRow > 1) {
+    const allStudentData = studentDataSheet.getRange(2, 1, studentDataSheetLastRow - 1, studentDataSheetLastColumn).getDisplayValues();
+        
+    // Check for duplicate student ID's
+    const duplicateCount = allStudentData.filter(row => row[0] === studentID).length;
+    if (duplicateCount > 1) {
+      throw new Error('DUPLICATE_ENTRY');
     }
   }
 
-  // If the student is not found, return error
-  return "missingDatabaseEntry";
+  // Add student data to the sheet
+  studentDataSheet.appendRow(studentData[0]);
+    
+  // Format the sheet
+  studentDataSheet.getRange('A:A').setNumberFormat('000000'); // Set ID format
+    
+  // Get the updated sheet rows/columns and sort alphabetically by student name
+  studentDataSheetLastRow = studentDataSheet.getLastRow();
+  studentDataSheetLastColumn = studentDataSheet.getLastColumn();
+  
+  if (studentDataSheetLastRow > 1) {
+    studentDataSheet.getRange(2, 1, studentDataSheetLastRow - 1, studentDataSheetLastColumn)
+    .sort({ column: 3, ascending: true });
+  }
+
+  return true;
 }
 
-/** Restore student from archive data and add to active data */
-function restoreStudentData(student) {
-  const activeLastRow = ACTIVE_DATA_SHEET.getLastRow();
-  const archiveLastRow = ARCHIVE_DATA_SHEET.getLastRow();
-
-  // Check for duplicate in active data if more than one row
-  if (activeLastRow > 1) {
-    activeDataRange = ACTIVE_DATA_SHEET.getRange(2, 1, activeLastRow - 1, 1).getDisplayValues();
-    const duplicate = activeDataRange.some(row => row[0] === student);
-    if (duplicate) {
-      return "duplicateDatabaseEntry"; // Return error response if duplicate found
-    }
-  }
-
-  // Check if archive data is empty
-  if (archiveLastRow <= 1) {
-    return "missingDatabaseEntry";
-  }
-
-  // Get all data from the archive sheet
-  const archiveDataRange = ARCHIVE_DATA_SHEET.getRange(2, 1, archiveLastRow - 1, ARCHIVE_DATA_SHEET.getLastColumn()).getDisplayValues();
-
-  let studentData = null;
-  let studentRowIndex = -1;
-
-  for (let i = 0; i < archiveDataRange.length; i++) {
-    if (archiveDataRange[i][0] === student) {
-      studentData = archiveDataRange[i];
-      studentRowIndex = i + 2;
-      break;
-    }
-  }
-
-  if (studentData) {
-    // Remove the student from the archive sheet
-    ARCHIVE_DATA_SHEET.deleteRow(studentRowIndex);
-
-    // Append the student data to the active sheet
-    ACTIVE_DATA_SHEET.appendRow(studentData);
+/** Rename student in data **/
+function renameStudent(studentID, studentStatus, newStudentName) {
+  const studentDataSheet = STUDENT_DATA_SHEET;
   
-    // Re-check active last row since it has been updated
-    const newActiveLastRow = ACTIVE_DATA_SHEET.getLastRow();
-    
-    // Sort the archive sheet if there are more than one rows of data
-    if (newActiveLastRow > 2) {
-      const activeDataToSort = ACTIVE_DATA_SHEET.getRange(2, 1, newActiveLastRow - 1, ACTIVE_DATA_SHEET.getLastColumn()).getDisplayValues();
-      activeDataToSort.sort((a, b) => a[0].localeCompare(b[0]));
-      ACTIVE_DATA_SHEET.getRange(2, 1, newActiveLastRow - 1, ACTIVE_DATA_SHEET.getLastColumn()).setValues(activeDataToSort);
-    }
-    
-    return "restoreSuccess"; // Exit the loop once the student is found and processed
-  } else {
-    // If the student is not found, return error
-    return "missingDatabaseEntry";
+  // Get all student data at once
+  const studentDataSheetLastRow = studentDataSheet.getLastRow();
+  const studentDataSheetLastColumn = studentDataSheet.getLastColumn();
+  if (studentDataSheetLastRow <= 1) {
+    throw new Error('MISSING_STUDENT_DATA');
   }
+
+  const allStudentData = studentDataSheet.getRange(2, 1, studentDataSheetLastRow - 1, studentDataSheetLastColumn).getDisplayValues();
+
+  // Check for duplicate student ID's
+  const duplicateCount = allStudentData.filter(row => row[0] === studentID).length;
+  if (duplicateCount > 1) {
+    throw new Error('DUPLICATE_ENTRY');
+  }
+
+  // Find student by ID
+  const studentIndex = allStudentData.findIndex(row => row[0] === studentID);
+  if (studentIndex === -1) {
+    throw new Error('MISSING_STUDENT_ENTRY');
+  }
+
+  // Validate student status
+  const currentStatus = allStudentData[studentIndex][1];
+  if (currentStatus !== studentStatus) {
+    throw new Error('MISSING_STUDENT_ENTRY');
+  }
+
+  // Update student name in student sheet
+  studentDataSheet.getRange(studentIndex + 2, 3).setValue(newStudentName);
+    
+  // Sort alphabetically by student name
+  if (studentDataSheetLastRow > 1) {
+    studentDataSheet.getRange(2, 1, studentDataSheetLastRow - 1, studentDataSheet.getLastColumn())
+    .sort({ column: 3, ascending: true });
+  }
+  
+  return true;
 }
 
-/** Delete student from archive data */
-function deleteStudentData(student) {
-  const archiveLastRow = ARCHIVE_DATA_SHEET.getLastRow();
-  let dataRange;
-
-  // Check for duplicate in active data if more than one row
-  if (archiveLastRow > 1) {
-    dataRange = ARCHIVE_DATA_SHEET.getRange(2, 1, archiveLastRow - 1, 1).getDisplayValues();
-    const studentPresent = dataRange.some(row => row[0] === student);
-    if (!studentPresent) {
-      return "missingDatabaseEntry"; // Return error response if student is not found
-    }
-  } else {
-    return "missingDatabaseEntry";
-  }
+/** Delete student from student data **/
+function deleteStudentData(studentID, studentStatus) {
+  const studentDataSheet = STUDENT_DATA_SHEET;
   
-  for (let i = 0; i < dataRange.length; i++) {
-    if (dataRange[i][0] === student) {
-      ARCHIVE_DATA_SHEET.deleteRow(i + 2);
-      return true; // Exit the loop once the row is deleted
-    }
+  // Get all student data at once
+  const studentDataSheetLastRow = studentDataSheet.getLastRow();
+  const studentDataSheetLastColumn = studentDataSheet.getLastColumn();
+  if (studentDataSheetLastRow <= 1) {
+    throw new Error('MISSING_STUDENT_DATA');
   }
 
-  // If the student is not found, return false to display error
-  return "missingDatabaseEntry";
+  const allStudentData = studentDataSheet.getRange(2, 1, studentDataSheetLastRow - 1, studentDataSheetLastColumn).getDisplayValues();
+  
+  // Check for duplicate student ID's
+  const duplicateCount = allStudentData.filter(row => row[0] === studentID).length;
+  if (duplicateCount > 1) {
+    throw new Error('DUPLICATE_ENTRY');
+  }
+
+  // Find student by ID
+  const studentIndex = allStudentData.findIndex(row => row[0] === studentID);
+  if (studentIndex === -1) {
+    throw new Error('MISSING_STUDENT_ENTRY');
+  }
+
+  // Validate student status
+  const currentStatus = allStudentData[studentIndex][1];
+  if (currentStatus !== studentStatus) {
+    throw new Error('MISSING_STUDENT_ENTRY');
+  }
+
+  // Delete student from studentData (adding 2 to account for header row and 0-based index)
+  studentDataSheet.deleteRow(studentIndex + 2);
+
+  return true;
 }
 
 /////////////////////
@@ -422,36 +361,43 @@ function createEmail(recipient, subject, body, attachments) {
 
   // Check user's email quota and warn if it's too low to send emails
   if (emailQuota <= 10) {
-    return "emailQuotaLimit";
+    throw new Error('QUOTA_LIMIT');
   }
 
+  // Get the current user's email
   const currentUserEmail = Session.getActiveUser().getEmail();
-  const emailSettings = CONSOLE_SHEET.getRange('A12:B12').getDisplayValues().flat();
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const schoolName = scriptProperties.getProperty('schoolName')
   
+  // Set senderName based on schoolName
+  const senderName = schoolName || ''; // Use schoolName if it exists, else default to an empty string
+  
+  // Create the email message object
   const emailMessage = {
     to: recipient,
     bcc: currentUserEmail,
-    replyTo: emailSettings[1],
+    replyTo: currentUserEmail,
     subject: subject,
     htmlBody: body,
-    name: emailSettings[0],
-    attachments: []
+    name: senderName,
   };
 
   // Add attachments if provided
   if (attachments) {
     const uint8Array = new Uint8Array(attachments);
-    const blob = Utilities.newBlob(uint8Array, 'application/pdf', 'First Lutheran School - Enrollment Packet.pdf');
-    emailMessage.attachments.push(blob);
+    let blob;
+
+    blob = Utilities.newBlob(uint8Array, 'application/pdf', 'First Lutheran School - Enrollment Packet.pdf');
+    emailMessage.attachments = [blob];
   }
 
   // Send the email
   try {
     MailApp.sendEmail(emailMessage);
-    return "emailSuccess";
+    return true;
   }
-  catch (e) {
-    return "emailFailure";
+  catch(e) {
+    throw new Error('EMAIL_FAILURE');
   }
 }
 
@@ -460,151 +406,96 @@ function createEmail(recipient, subject, body, attachments) {
 ////////////////////////
 
 function getAllDates() {
-  const evaluationDates = getEvaluationDates();
-  const screeningDates = getScreeningDates();
-  const submissionDates = getSubmissionDates();
-  const acceptanceDates = getAcceptanceDates();
-
+  // Get data once and pass it to all functions
+  const data = STUDENT_DATA_SHEET.getDataRange().getDisplayValues();
+  const headers = data[0];
+  // Filter for only active students before processing
+  const rows = data.slice(1).filter(row => row[COLS.STATUS] === 'Active');
+  
   return {
-    evaluationDates: evaluationDates,
-    screeningDates: screeningDates,
-    submissionDates: submissionDates,
-    acceptanceDates: acceptanceDates
+    evaluationDates: getEvaluationDates(rows),
+    screeningDates: getScreeningDates(rows),
+    submissionDates: getSubmissionDates(rows),
+    acceptanceDates: getAcceptanceDates(rows)
   };
 }
 
-/** Get student evaluation dates **/
-function getEvaluationDates() {
-  const data = ACTIVE_DATA_SHEET.getDataRange().getDisplayValues();
-  let evaluationDates = [];
-
-  // Loop through the data
-  for (let i = 1; i < data.length; i++) { // Assuming the first row contains headers
-    let studentName = data[i][0];
-    let dateValue = data[i][13];
-
-    // Check the document status
-    let documentStatus = data[i][15]; // Extract the relevant column
-    if (documentStatus === "") {
-      documentStatus = "Status missing";
-    }
-
-    // Skip processing if dateValue is empty
-    if (!dateValue) continue;
-    
-    evaluationDates.push({ student: studentName, date: dateValue, status: documentStatus});
-  }
-
-  // Sort the evaluationDates array by the 'date' property
-  evaluationDates.sort(function (a, b) {
-    let dateA = new Date(a.date);
-    let dateB = new Date(b.date);
-    return dateB - dateA;
-  });
-  return evaluationDates;
+// Utility function for date sorting
+function sortByDate(arr) {
+  return arr.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 
-/** Get student screening dates **/
-function getScreeningDates() {
-  const data = ACTIVE_DATA_SHEET.getDataRange().getDisplayValues();
-  let screeningDates = [];
+// Column indices object for better maintainability
+const COLS = {
+  STATUS: 1,  // Column B
+  STUDENT_NAME: 2,
+  EVALUATION_DATE: 15,
+  EVALUATION_FORM: 17,
+  SCREENING_DATE: 19,
+  SCREENING_TIME: 20,
+  SUBMISSION_DATE: 25,
+  ACCEPTANCE_DATE: 27
+};
 
-  // Loop through the data
-  for (let i = 1; i < data.length; i++) { // Assuming the first row contains headers
-    let studentName = data[i][0]; // Set to correct column number
-    let dateValue = data[i][17]; // Set to correct column number
-    let screeningTime = data[i][18]; // Set to correct column number
-
-    // Skip processing if dateValue is empty
-    if (!dateValue) continue;
-
-    if (!screeningTime) {
-      screeningTime = "false";
-    }
-
-    screeningDates.push({
-      student: studentName, 
-      date: dateValue, 
-      time: screeningTime
-    });
-  }
-
-  // Sort the screeningDates array by the 'date' property
-  screeningDates.sort(function (a, b) {
-    let dateA = new Date(a.date);
-    let dateB = new Date(b.date);
-    return dateB - dateA;
-  });
-  return screeningDates;
+function getEvaluationDates(rows) {
+  return sortByDate(
+    rows
+      .filter(row => row[COLS.EVALUATION_DATE])
+      .map(row => ({
+        student: row[COLS.STUDENT_NAME],
+        date: row[COLS.EVALUATION_DATE],
+        status: row[COLS.EVALUATION_FORM] || "Status missing"
+      }))
+  );
 }
 
-/** Get admin submission dates **/
-function getSubmissionDates() {
-  const data = ACTIVE_DATA_SHEET.getDataRange().getDisplayValues();
-  let submissionDates = [];
-
-  // Loop through the data
-  for (let i = 1; i < data.length; i++) { // Assuming the first row contains headers
-    let studentName = data[i][0]; // Set to correct column number
-    let dateValue = data[i][23]; // Set to correct column number
-
-    // Skip processing if dateValue is empty
-    if (!dateValue) continue;
-
-    submissionDates.push({
-      student: studentName, 
-      date: dateValue, 
-    });
-  }
-
-  // Sort the screeningDates array by the 'date' property
-  submissionDates.sort(function (a, b) {
-    let dateA = new Date(a.date);
-    let dateB = new Date(b.date);
-    return dateB - dateA;
-  });
-
-  return submissionDates;
+function getScreeningDates(rows) {
+  return sortByDate(
+    rows
+      .filter(row => row[COLS.SCREENING_DATE])
+      .map(row => ({
+        student: row[COLS.STUDENT_NAME],
+        date: row[COLS.SCREENING_DATE],
+        time: row[COLS.SCREENING_TIME] || "false"
+      }))
+  );
 }
 
-/** Get student acceptance dates **/
-function getAcceptanceDates() {
-  const data = ACTIVE_DATA_SHEET.getDataRange().getDisplayValues();
-  let acceptanceDates = [];
+function getSubmissionDates(rows) {
+  return sortByDate(
+    rows
+      .filter(row => row[COLS.SUBMISSION_DATE])
+      .map(row => ({
+        student: row[COLS.STUDENT_NAME],
+        date: row[COLS.SUBMISSION_DATE]
+      }))
+  );
+}
 
-  // Loop through the data
-  for (let i = 1; i < data.length; i++) { // Assuming the first row contains headers
-    let studentName = data[i][0]; // Set to correct column number
-    let dateValue = data[i][25]; // Set to correct column number
-    let documentStatus = data[i].slice(28, 36); // Extract the relevant columns
-
-    // Skip processing if dateValue or all documents are empty
-    if (!dateValue) continue;
-    
-    // Inside the loop before pushing to acceptanceDates array
-    let modifiedStatus = documentStatus.map(function(status) {
-      return status === "" ? "Status missing" : status;
-    });
-
-    acceptanceDates.push({ 
-      student: studentName, 
-      date: dateValue, 
-      blackbaudAccount: modifiedStatus[0], 
-      admissionContract: modifiedStatus[1], 
-      tuitionPayment: modifiedStatus[2], 
-      medicalConsent: modifiedStatus[3], 
-      emergencyContacts: modifiedStatus[4], 
-      registrationFee: modifiedStatus[5]
-    });
-  }
-
-  // Sort the acceptanceDates array by the 'date' property
-  acceptanceDates.sort(function (a, b) {
-    let dateA = new Date(a.date);
-    let dateB = new Date(b.date);
-    return dateB - dateA;
-  });
-  return acceptanceDates;
+function getAcceptanceDates(rows) {
+  return sortByDate(
+    rows
+      .filter(row => row[COLS.ACCEPTANCE_DATE])
+      .map(row => {
+        const documentStatus = row.slice(30, 39).map(status => 
+          status || "Status missing"
+        );
+        
+        return {
+          student: row[COLS.STUDENT_NAME],
+          date: row[COLS.ACCEPTANCE_DATE],
+          blackbaudAccount: documentStatus[0],
+          birthCertificatePassport: documentStatus[1],
+          immunizationRecords: documentStatus[2],
+          admissionContract: documentStatus[3],
+          tuitionPayment: documentStatus[4],
+          medicalConsent: documentStatus[5],
+          emergencyContacts: documentStatus[6],
+          technologyConsent: documentStatus[7],
+          registrationFee: documentStatus[8]
+        };
+      })
+  );
 }
 
 ////////////////////////
@@ -612,7 +503,7 @@ function getAcceptanceDates() {
 ////////////////////////
 
 /** Get user settings from user properties service **/
-function getUserProperties() {
+function getUserSettings() {
   const userProperties = PropertiesService.getUserProperties();
 
   return {
@@ -628,123 +519,213 @@ function getUserProperties() {
   };
 }
 
-/** Get settings from 'Console' sheet **/
-function getSettings() {
-  const schoolSettings = CONSOLE_SHEET.getRange('A3:B3').getDisplayValues().flat();
-  const managerSettings = CONSOLE_SHEET.getRange('A6:E6').getDisplayValues().flat();
-  const feeSettings = CONSOLE_SHEET.getRange('A9:H9').getDisplayValues().flat();
-  const emailTemplateSettings = CONSOLE_SHEET.getRange('C12:J13').getDisplayValues().flat();
-  const allSettings = {
-    'School Name': schoolSettings[0],
-    'School Year': schoolSettings[1],
-    'Enrollment Manager 1': managerSettings[0],
-    'Enrollment Manager 2': managerSettings[1],
-    'Enrollment Manager 3': managerSettings[2],
-    'Enrollment Manager 4': managerSettings[3],
-    'Enrollment Manager 5': managerSettings[4],
-    'Developmental Screening Fee (EEC)': feeSettings[0],
-    'Developmental Screening Fee (TK/K)': feeSettings[1],
-    'Academic Screening Fee': feeSettings[2],
-    'Registration Fee': feeSettings[3],
-    'HUG Fee': feeSettings[4],
-    'Family Commitment Fee': feeSettings[5],
-    'FLASH Processing Fee': feeSettings[6],
-    'Withdrawal Processing Fee': feeSettings[7],
-    'Waitlist Subject': emailTemplateSettings[0],
-    'Waitlist Body': emailTemplateSettings[8],
-    'Evaluation Subject': emailTemplateSettings[1],
-    'Evaluation Body': emailTemplateSettings[9],
-    'Screening (EEC) Subject': emailTemplateSettings[2],
-    'Screening (EEC) Body': emailTemplateSettings[10],
-    'Screening (School) Subject': emailTemplateSettings[3],
-    'Screening (School) Body': emailTemplateSettings[11],
-    'Acceptance Subject': emailTemplateSettings[4],
-    'Acceptance Body': emailTemplateSettings[12],
-    'Acceptance (Conditional) Subject': emailTemplateSettings[5],
-    'Acceptance (Conditional) Body': emailTemplateSettings[13],
-    'Rejection Subject': emailTemplateSettings[6],
-    'Rejection Body': emailTemplateSettings[14],
-    'Completion Subject': emailTemplateSettings[7],
-    'Completion Body': emailTemplateSettings[15]
+/** Get app settings from script properties service */
+function getAppSettings() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const currentYear = new Date().getFullYear();
+
+  const properties = {
+    schoolSettings: {
+      schoolName: scriptProperties.getProperty('schoolName') || "",
+      schoolYear: scriptProperties.getProperty('schoolYear') || (currentYear + '-' + (currentYear + 1))
+    },
+    managerSettings: {
+      enrollmentManager1: scriptProperties.getProperty('enrollmentManager1') || "",
+      enrollmentManager2: scriptProperties.getProperty('enrollmentManager2') || "",
+      enrollmentManager3: scriptProperties.getProperty('enrollmentManager3') || "",
+      enrollmentManager4: scriptProperties.getProperty('enrollmentManager4') || "",
+      enrollmentManager5: scriptProperties.getProperty('enrollmentManager5') || ""
+    },
+    feeSettings: {
+      developmentalScreeningEECFee: scriptProperties.getProperty('developmentalScreeningEECFee') || "",
+      developmentalScreeningSchoolFee: scriptProperties.getProperty('developmentalScreeningSchoolFee') || "",
+      academicScreeningFee: scriptProperties.getProperty('academicScreeningFee') || "",
+      registrationFee: scriptProperties.getProperty('registrationFee') || "",
+      hugFee: scriptProperties.getProperty('hugFee') || "",
+      familyCommitmentFee: scriptProperties.getProperty('familyCommitmentFee') || "",
+      flashFee: scriptProperties.getProperty('flashFee') || "",
+      withdrawalFee: scriptProperties.getProperty('withdrawalFee') || ""
+    },
+    emailTemplateSettings: {
+      waitlist: {
+        subject: scriptProperties.getProperty('emailTemplateWaitlistSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateWaitlistBody') || ""
+      },
+      evaluation: {
+        subject: scriptProperties.getProperty('emailTemplateEvaluationSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateEvaluationBody') || ""
+      },
+      screeningEEC: {
+        subject: scriptProperties.getProperty('emailTemplateScreeningEECSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateScreeningEECBody') || ""
+      },
+      screeningSchool: {
+        subject: scriptProperties.getProperty('emailTemplateScreeningSchoolSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateScreeningSchoolBody') || ""
+      },
+      acceptance: {
+        subject: scriptProperties.getProperty('emailTemplateAcceptanceSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateAcceptanceBody') || ""
+      },
+      acceptanceConditional: {
+        subject: scriptProperties.getProperty('emailTemplateAcceptanceConditionalSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateAcceptanceConditionalBody') || ""
+      },
+      rejection: {
+        subject: scriptProperties.getProperty('emailTemplateRejectionSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateRejectionBody') || ""
+      },
+      completion: {
+        subject: scriptProperties.getProperty('emailTemplateCompletionSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateCompletionBody') || ""
+      }
+    }
   };
-  
-  return allSettings;
+
+  return properties;
 }
 
-/** Write settings to 'Console' sheet **/
-function writeSettings(userSettings, schoolSettings, managerSettings, feeSettings, emailTemplateSubject, emailTemplateBody) {
-  const userProperties = PropertiesService.getUserProperties();
-  const properties = {
-    theme: userSettings.theme,
-    customThemeType: userSettings.customThemeType,
-    customThemePrimaryColor: userSettings.customThemePrimaryColor,
-    customThemeAccentColor: userSettings.customThemeAccentColor,
-    alertSound: userSettings.alertSound,
-    emailSound: userSettings.emailSound,
-    removeSound: userSettings.removeSound,
-    successSound: userSettings.successSound,
-    syncSound: userSettings.syncSound,
-    silentMode: userSettings.silentMode
-  };
+/** Write all settings to user and script properties stores **/
+function writeSettings(userSettings, appSettings) {
+  try {
+    const userProperties = PropertiesService.getUserProperties();
+    const scriptProperties = PropertiesService.getScriptProperties();
 
-  // Sets multiple user properties at once while deleting all other user properties to maintain store
-  userProperties.setProperties(properties, true); 
-  
-  // Write global settings to the 'Console' sheet
-  CONSOLE_SHEET.getRange('A3:B3').setValues(schoolSettings);
-  CONSOLE_SHEET.getRange('A6:E6').setValues(managerSettings);
-  CONSOLE_SHEET.getRange('A9:H9').setValues(feeSettings);
-  CONSOLE_SHEET.getRange('C12:J12').setValues(emailTemplateSubject);
-  CONSOLE_SHEET.getRange('C13:J13').setValues(emailTemplateBody);
+    // Store user-specific settings in User Properties and delete unused properties
+    userProperties.setProperties({
+      theme: userSettings.theme || 'falconLight',
+      customThemeType: userSettings.customThemeType || '',
+      customThemePrimaryColor: userSettings.customThemePrimaryColor || '',
+      customThemeAccentColor: userSettings.customThemeAccentColor || '',
+      alertSound: userSettings.alertSound || 'alert01',
+      emailSound: userSettings.emailSound || 'email01',
+      removeSound: userSettings.removeSound || 'remove01',
+      successSound: userSettings.successSound || 'sucess01',
+      silentMode: userSettings.silentMode || 'false'
+    }, true);
+    
+    // Store app-wide settings in Script Properties and delete unused properties
+    scriptProperties.setProperties({
+      // School settings
+      schoolName: appSettings.schoolSettings.schoolName,
+      schoolYear: appSettings.schoolSettings.schoolYear,
+      
+      // Enrollment manager settings
+      enrollmentManager1: appSettings.managerSettings.enrollmentManager1,
+      enrollmentManager2: appSettings.managerSettings.enrollmentManager2,
+      enrollmentManager3: appSettings.managerSettings.enrollmentManager3, 
+      enrollmentManager4: appSettings.managerSettings.enrollmentManager4,
+      enrollmentManager5: appSettings.managerSettings.enrollmentManager5,
+
+      // Fee settings
+      developmentalScreeningEECFee: appSettings.feeSettings.developmentalScreeningEECFee,
+      developmentalScreeningSchoolFee: appSettings.feeSettings.developmentalScreeningSchoolFee,
+      academicScreeningFee: appSettings.feeSettings.academicScreeningFee,
+      registrationFee: appSettings.feeSettings.registrationFee,
+      hugFee: appSettings.feeSettings.hugFee,
+      familyCommitmentFee: appSettings.feeSettings.familyCommitmentFee,
+      flashFee: appSettings.feeSettings.flashFee,
+      withdrawalFee: appSettings.feeSettings.withdrawalFee,
+
+      // Email template settings
+      emailTemplateWaitlistSubject: appSettings.emailTemplateSettings.waitlist.subject,
+      emailTemplateWaitlistBody: appSettings.emailTemplateSettings.waitlist.body,
+
+      emailTemplateEvaluationSubject: appSettings.emailTemplateSettings.evaluation.subject,
+      emailTemplateEvaluationBody: appSettings.emailTemplateSettings.evaluation.body,
+      
+      emailTemplateScreeningEECSubject: appSettings.emailTemplateSettings.screeningEEC.subject,
+      emailTemplateScreeningEECBody: appSettings.emailTemplateSettings.screeningEEC.body,
+
+      emailTemplateScreeningSchoolSubject: appSettings.emailTemplateSettings.screeningSchool.subject,
+      emailTemplateScreeningSchoolBody: appSettings.emailTemplateSettings.screeningSchool.body,
+
+      emailTemplateAcceptanceSubject: appSettings.emailTemplateSettings.acceptance.subject,
+      emailTemplateAcceptanceBody: appSettings.emailTemplateSettings.acceptance.body,
+
+      emailTemplateAcceptanceConditionalSubject: appSettings.emailTemplateSettings.acceptanceConditional.subject,
+      emailTemplateAcceptanceConditionalBody: appSettings.emailTemplateSettings.acceptanceConditional.body,
+      
+      emailTemplateRejectionSubject: appSettings.emailTemplateSettings.rejection.subject,
+      emailTemplateRejectionBody: appSettings.emailTemplateSettings.rejection.body,
+
+      emailTemplateCompletionSubject: appSettings.emailTemplateSettings.completion.subject,
+      emailTemplateCompletionBody: appSettings.emailTemplateSettings.completion.body
+    }, true);
+  } catch (e) {
+    throw new Error(e);
+  }
 }
 
 ////////////////////
 // FILE FUNCTIONS //
 ////////////////////
 
-/** Export data as a .csv file **/
 function getCsv(dataType) {
-  let data;
-  let csvContent = '';
-  
-  if (dataType === 'activeData') {
-    data = ACTIVE_DATA_SHEET.getDataRange().getValues();
-  } else {
-    data = ARCHIVE_DATA_SHEET.getDataRange().getValues();
+  try {
+    let data;
+    
+    if (dataType === 'studentData') {
+      data = STUDENT_DATA_SHEET.getDataRange().getDisplayValues();
+    }
+
+    return data.map(rowArray => {
+      return rowArray.map(field => {
+        // Convert to string and trim any whitespace
+        let stringField = String(field).trim();
+        
+        // Determine if the field needs to be quoted
+        let needsQuoting = false;
+        
+        // Quote if: contains commas, quotes, line breaks, or is a number with leading zeros
+        if (
+          stringField.includes(',') || 
+          stringField.includes('"') || 
+          stringField.includes('\n') || 
+          stringField.includes('\r') ||
+          (
+            // Check for leading zeros in numeric fields
+            /^0\d+$/.test(stringField) && 
+            !isNaN(stringField)
+          )
+        ) {
+          needsQuoting = true;
+        }
+
+        if (needsQuoting) {
+          // Escape any existing quotes by doubling them
+          stringField = stringField.replace(/"/g, '""');
+          // Wrap the field in quotes
+          return `"${stringField}"`;
+        }
+        
+        return stringField;
+      }).join(',');
+    }).join('\r\n');
+  } catch(e) {
+      throw new Error('EXPORT_FAILURE');
   }
-    
-  data.forEach(function(rowArray) {
-    // Wrap fields containing commas in double quotes
-    var row = rowArray.map(function(field) {
-      if (typeof field === 'string' && field.includes(',')) {
-        return `"${field}"`; // Wrap the field with double quotes if it contains a comma
-      }
-      return field;
-    }).join(',');
-    
-    csvContent += row + '\r\n';
-  });
-  
-  return csvContent;
 }
 
 /** Export data as a .xlsx file **/
 function getXlsx(dataType) {
-  const spreadsheetId = SpreadsheetApp.getActive().getId();
-  let sheetId;
-  
-  if (dataType === 'activeData') {
-    sheetId = ACTIVE_DATA_SHEET.getSheetId();
-  } else {
-    sheetId = ARCHIVE_DATA_SHEET.getSheetId();
-  }
+  try {
+    const spreadsheetId = SpreadsheetApp.getActive().getId();
+    let sheetId;
+    
+    if (dataType === 'studentData') {
+      sheetId = STUDENT_DATA_SHEET.getSheetId();
+    }
 
-  // Construct the export URL
-  const url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/export?format=xlsx&gid=" + sheetId;
-  
-  // Fetch the xlsx file as a blob
-  const blob = UrlFetchApp.fetch(url, {headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}}).getBlob();
-  
-  // Return blob as binary
-  return blob.getBytes();
+    // Construct the export URL
+    const url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/export?format=xlsx&gid=" + sheetId;
+    
+    // Fetch the xlsx file as a blob
+    const blob = UrlFetchApp.fetch(url, {headers: {Authorization: 'Bearer ' + ScriptApp.getOAuthToken()}}).getBlob();
+    
+    // Return blob as binary
+    return blob.getBytes();
+  } catch(e) {
+      throw new Error('EXPORT_FAILURE');
+  }
 }
