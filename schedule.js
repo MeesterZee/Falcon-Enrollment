@@ -1,5 +1,4 @@
 <script type="text/javascript">
-
   window.onload = function() {
     const page = document.getElementById('page');
     const loadingIndicator = document.getElementById('loading-indicator');
