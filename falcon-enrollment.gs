@@ -107,7 +107,6 @@ function include(filename) {
 /////////////////////////
 
 function getStudentData() {
-  const test = getSheetData(STUDENT_DATA_SHEET);
   return getSheetData(STUDENT_DATA_SHEET);
 }
 
