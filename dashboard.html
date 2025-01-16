@@ -183,9 +183,72 @@
               <td class="td2">Enrolled in EEC:</td>
               <td class="td2">
                 <select class="table-select" id="enrolledInEEC">
-                  <option value="No">No</option>
                   <option value="Yes">Yes</option>
+                  <option value="No">No</option>
                 </select>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <h3>Outreach Information</h3>
+        <div class="table-wrapper">
+          <table>
+            <tr>
+              <td class="td2">"Discover FLS" attendee:</td>
+              <td class="td2">
+                <select class="table-select" id="discoverFLS">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td class="td2">School tour attendee:</td>
+              <td class="td2">
+                <select class="table-select" id="schoolTour">
+                  <option value="Yes">Yes</option>
+                  <option value="No">No</option>
+                </select>
+              </td>
+            </tr>
+            <tr>
+              <td class="td2">Discovery method:</td>
+              <td class="td2">
+                <select class="table-select" id="discoveryMethod">
+                  <option value="Word of mouth">Word of mouth</option>
+                  <option value="Visited campus for an event">Visited campus for an event</option>
+                  <option value="Social media (Facebook, Instagram, etc.)">Social media (Facebook, Instagram, etc.)</option>
+                  <option value="Online listings (Google, Yelp, Great Schools, etc.)">Online listings (Google, Yelp, Great Schools, etc.)</option>
+                  <option value="Newspaper">Newspaper</option>
+                  <option value="Referred by EEC/school family">Referred by EEC/school family</option>
+                  <option value="Referred by employee">Referred by FLCS employee</option>
+                  <option value="Referred by alumni">Referred by alumni</option>
+                  <option value="Referred by community partner">Referred by community partner</option>
+                  <option value="Drove by">Drove by</option>
+                  <option value="Received flyer/email">Received flyer/email</option>
+                  <option value="Other">Other</option>
+                  <option value="N/A">N/A</option>
+                </select>
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="table-wrapper" style="display: none; margin-top: 10px;" id="referredByElement">
+          <table>
+            <tr>
+              <td class="td2">Referred by:</td>
+              <td class="td2">
+                <input class="table-input" type="text" id="referredBy">
+              </td>
+            </tr>
+          </table>
+        </div>
+        <div class="table-wrapper" style="display: none; margin-top: 10px;" id="otherElement">
+          <table>
+            <tr>
+              <td class="td2">Other:</td>
+              <td class="td2">
+                <input class="table-input" type="text" id="other">
               </td>
             </tr>
           </table>
@@ -570,6 +633,69 @@
                     <option value="No">No</option>
                     <option value="Yes">Yes</option>
                   </select>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <h3>Outreach Information</h3>
+          <div class="table-wrapper">
+            <table>
+              <tr>
+                <td class="td2">"Discover FLS" attendee:</td>
+                <td class="td2">
+                  <select class="table-select" id="addDiscoverFLS">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td class="td2">School tour attendee:</td>
+                <td class="td2">
+                  <select class="table-select" id="addSchoolTour">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                </td>
+              </tr>
+              <tr>
+                <td class="td2">Discovery method:</td>
+                <td class="td2">
+                  <select class="table-select" id="addDiscoveryMethod">
+                    <option value="Word of mouth">Word of mouth</option>
+                    <option value="Visited campus for an event">Visited campus for an event</option>
+                    <option value="Social media (Facebook, Instagram, etc.)">Social media (Facebook, Instagram, etc.)</option>
+                    <option value="Online listings (Google, Yelp, Great Schools, etc.)">Online listings (Google, Yelp, Great Schools, etc.)</option>
+                    <option value="Newspaper">Newspaper</option>
+                    <option value="Referred by EEC/school family">Referred by EEC/school family</option>
+                    <option value="Referred by employee">Referred by FLCS employee</option>
+                    <option value="Referred by alumni">Referred by alumni</option>
+                    <option value="Referred by community partner">Referred by community partner</option>
+                    <option value="Drove by">Drove by</option>
+                    <option value="Received flyer/email">Received flyer/email</option>
+                    <option value="Other">Other</option>
+                    <option value="N/A">N/A</option>
+                  </select>
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="table-wrapper" style="display: none; margin-top: 10px;" id="addReferredByElement">
+            <table>
+              <tr>
+                <td class="td2">Referred by:</td>
+                <td class="td2">
+                  <input class="table-input" type="text" id="addReferredBy">
+                </td>
+              </tr>
+            </table>
+          </div>
+          <div class="table-wrapper" style="display: none; margin-top: 10px;" id="addOtherElement">
+            <table>
+              <tr>
+                <td class="td2">Other:</td>
+                <td class="td2">
+                  <input class="table-input" type="text" id="addOther">
                 </td>
               </tr>
             </table>
