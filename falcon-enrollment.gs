@@ -1,4 +1,4 @@
-/** Falcon Enrollment - Web App v4.0 **/
+/** Falcon Enrollment - Web App v4.1 **/
 /** Falcon EDU © 2023-2025 All Rights Reserved **/
 /** Created by: Nick Zagorin **/
 
@@ -75,7 +75,7 @@ function getNavbar(activePage) {
 
       function showAbout() {
         const title = "<i class='bi bi-info-circle'></i>About Falcon Enrollment";
-        const message = "Web App Version: 4.0<br>Build: 26.122924 <br><br>Created by: Nick Zagorin<br>© 2023-2025 - All rights reserved";
+        const message = "Web App Version: 4.1<br>Build: 27.011525 <br><br>Created by: Nick Zagorin<br>© 2023-2025 - All rights reserved";
         showModal(title, message, "Close");
       }
     </script>
@@ -191,11 +191,10 @@ function saveStudentData(studentData) {
 
   // Format the sheet
   studentDataSheet.getRange('A:A').setNumberFormat('000000'); // Set ID format
-  studentDataSheet.getRange('U:U').setNumberFormat('HH:mm'); // Set time format
+  studentDataSheet.getRange('Z:Z').setNumberFormat('HH:mm'); // Set time format
   
   return true;
 }
-
 
 /** Update student status:  active/archive **/
 function updateStudentStatus(studentID, studentStatus) {
