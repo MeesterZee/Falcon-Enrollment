@@ -280,6 +280,7 @@
       if (selectedTemplate) {
         templateSubjectInput.value = selectedTemplate.unsavedSubject || selectedTemplate.subject;
         templateBodyInput.innerHTML = selectedTemplate.unsavedBody || selectedTemplate.body;
+        templateBodyInput.scrollTop = 0;
       }
     });
   }
