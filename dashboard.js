@@ -12,6 +12,13 @@
     // EEC information
     'enrolledInEEC': 'Enrolled In EEC',
 
+    // Outreach information
+    'discoverFLS': '"Discover FLS" Attendee',
+    'schoolTour': 'School Tour Attendee',
+    'discoveryMethod': 'Discovery Method',
+    'referredBy': 'Referred By',
+    'other': 'Other',
+
     // Student evaluation
     'evaluationDueDate': 'Evaluation Due Date', 'evaluationEmail': 'Evaluation Email Sent', 
     
@@ -93,7 +100,21 @@
   };
     
   function setEventListeners() {
-    console.log("Setting event listeners...")
+    console.log("Setting event listeners...");
+
+    // Discovery method elements
+    const discoveryMethodSelect = document.getElementById('discoveryMethod');
+    const referredByElement = document.getElementById('referredByElement');
+    const otherElement = document.getElementById('otherElement');
+    const referredByInput = document.getElementById('referredBy');
+    const otherInput = document.getElementById('other');
+    
+    // Add student discovery method elements
+    const addDiscoveryMethodSelect = document.getElementById('addDiscoveryMethod');
+    const addReferredByElement = document.getElementById('addReferredByElement');
+    const addOtherElement = document.getElementById('addOtherElement');
+    const addReferredByInput = document.getElementById('addReferredBy');
+    const addOtherInput = document.getElementById('addOther');
     
     // Check for unsaved changes or busy state before closing the window
     window.addEventListener('beforeunload', function (e) {
@@ -177,8 +198,8 @@
     });
 
     // Add event listeners for select boxes
-    const selectColorElements = document.querySelectorAll('#gender, #incomingGrade, #enrollmentManager, #gradeStatus, #enrolledInEEC, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminAcceptance, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
-    const inputColorElements = document.querySelectorAll('#dateOfBirth, #parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail, #evaluationDueDate, #screeningDate, #screeningTime, #adminSubmissionDate, #acceptanceDueDate');
+    const selectColorElements = document.querySelectorAll('#gender, #incomingGrade, #enrollmentManager, #gradeStatus, #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminAcceptance, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
+    const inputColorElements = document.querySelectorAll('#dateOfBirth, #parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail, #referredBy, #other, #evaluationDueDate, #screeningDate, #screeningTime, #adminSubmissionDate, #acceptanceDueDate');
     const noColorElements = document.querySelectorAll('#notes');
 
     selectColorElements.forEach(element => {
@@ -205,7 +226,7 @@
       });
     });
 
-    // Highlight save changes with exceptions
+    // Allow deletion of select box entries with exceptions
     document.querySelectorAll("select:not(#studentName, #templateSelect, #formSelect, #dataTypeSelect, #fileTypeSelect)").forEach(function(select) {
       select.addEventListener("keydown", function(event) {
         if (event.key === "Backspace" || event.key === "Delete") {
@@ -214,6 +235,25 @@
           }
           select.value = '';
           select.style.backgroundColor = '';
+
+          // Check if it's the discoveryMethod select box
+          if (select.id === "discoveryMethod") {
+            referredByElement.style.display = 'none';
+            referredByInput.value = '';
+            referredByInput.style.backgroundColor = '';
+            otherElement.style.display = 'none';
+            otherInput.value = '';
+            otherInput.style.backgroundColor = '';
+          }
+
+          if (select.id === "addDiscoveryMethod") {
+            addReferredByElement.style.display = 'none';
+            addReferredByInput.value = '';
+            addReferredByInput.style.backgroundColor = '';
+            addOtherElement.style.display = 'none';
+            addOtherInput.value = '';
+            addOtherInput.style.backgroundColor = '';
+          }
         }
       });
     });
@@ -228,6 +268,57 @@
     const templateSelect = document.getElementById('templateSelect');
     templateSelect.addEventListener('change', function() {
       getEmailTemplate();
+    });
+
+    // Add event listeners for 'Discovery method' in Student Profile and Add Student 
+    const referralOptions = [
+      'Referred by EEC/school family',
+      'Referred by employee',
+      'Referred by alumni',
+      'Referred by community partner'
+    ];
+
+    discoveryMethodSelect.addEventListener('change', function (event) {
+      const selectedValue = discoveryMethodSelect.value;
+      if (referralOptions.includes(selectedValue)) {
+        referredByElement.style.display = '';
+        otherElement.style.display = 'none';
+        // Reset both value and background color
+        otherInput.value = '';
+        otherInput.style.backgroundColor = '';
+      } else if (selectedValue === 'Other') {
+        referredByElement.style.display = 'none';
+        otherElement.style.display = '';
+        // Reset both value and background color
+        referredByInput.value = '';
+        referredByInput.style.backgroundColor = '';
+      } else {
+        referredByElement.style.display = 'none';
+        otherElement.style.display = 'none';
+        // Reset both value and background color for both inputs
+        referredByInput.value = '';
+        referredByInput.style.backgroundColor = '';
+        otherInput.value = '';
+        otherInput.style.backgroundColor = '';
+      }
+    });
+
+    addDiscoveryMethodSelect.addEventListener('change', function (event) {
+      const selectedValue = addDiscoveryMethodSelect.value;
+      if (referralOptions.includes(selectedValue)) {
+        addReferredByElement.style.display = '';
+        addOtherElement.style.display = 'none';
+        addOtherInput.value = '';
+      } else if (selectedValue === 'Other') {
+        addReferredByElement.style.display = 'none';
+        addOtherElement.style.display = '';
+        addReferredByInput.value = '';
+      } else {
+        addReferredByElement.style.display = 'none';
+        addOtherElement.style.display = 'none';
+        addReferredByInput.value = '';       
+        addOtherInput.value = '';
+      }
     });
 
     // Add paste event listeners to rich text inputs
@@ -282,7 +373,10 @@
             'Current School Name',
             'Current Teacher Name',
             'Current Teacher Email',
-            'Enrolled In EEC'
+            'Enrolled In EEC',
+            '"Discover FLS" Attendee',
+            'School Tour Attendee',
+            'Discovery Method'
           ].includes(key)) {
             const value = student[key] ? student[key].toString().toLowerCase() : '';
             return value.includes(filter);
@@ -310,7 +404,6 @@
       }
     });
 
-    
     console.log("Complete!");
   }
 
@@ -354,9 +447,15 @@
     modalInputs.forEach(function(input) {
       if (input.id === 'emailBody') {
         input.innerHTML = '';
-      } else if (input.id === 'templateSelect' || input.id === 'formSelect' || input.id === 'dataTypeSelect' || input.id === 'fileTypeSelect') {
+      } 
+      else if (input.id === 'templateSelect' || input.id === 'formSelect' || input.id === 'dataTypeSelect' || input.id === 'fileTypeSelect') {
         input.selectedIndex = 0; // Reset to the first option
-      } else {
+      } 
+      else if (input.id === 'addReferredBy' || input.id === 'addOther') {
+        document.getElementById('addReferredByElement').style.display = 'none';
+        document.getElementById('addOtherElement').style.display = 'none'; 
+      }
+      else {
         input.value = '';
       }
     });
@@ -425,11 +524,19 @@
     const student = tempStudentData.find(item => item['Student ID'] === selectedStudentID);
 
     // Update student data
+    const referralOptions = [
+      'Referred by EEC/school family',
+      'Referred by employee',
+      'Referred by alumni',
+      'Referred by community partner'
+    ];
+    
     Object.entries(STUDENT_KEY_MAPPINGS).forEach(([elementId, dataKey]) => {
-        const element = document.getElementById(elementId);
-        if (element) {
-            student[dataKey] = element.value;
-        }
+      const element = document.getElementById(elementId);
+      if (element) {
+        // Assign value to the student object
+        student[dataKey] = element.value;
+      }
     });
 
     const studentDataArray = [[
@@ -528,7 +635,12 @@
         'Current School Name': document.getElementById('addCurrentSchoolName').value,
         'Current Teacher Name': document.getElementById('addCurrentTeacherName').value,
         'Current Teacher Email': document.getElementById('addCurrentTeacherEmail').value,
-        'Enrolled In EEC': document.getElementById('addEnrolledInEEC').value
+        'Enrolled In EEC': document.getElementById('addEnrolledInEEC').value,
+        '"Discover FLS" Attendee': document.getElementById('addDiscoverFLS').value,
+        'School Tour Attendee': document.getElementById('addSchoolTour').value,
+        'Discovery Method': document.getElementById('addDiscoveryMethod').value,
+        'Referred By': document.getElementById('addReferredBy').value,
+        'Other': document.getElementById('addOther').value
       };
 
       closeHtmlModal("addStudentModal");
@@ -554,6 +666,11 @@
         tempStudent['Current Teacher Name'],
         tempStudent['Current Teacher Email'],
         tempStudent['Enrolled In EEC'],
+        tempStudent['"Discover FLS" Attendee'],
+        tempStudent['School Tour Attendee'],
+        tempStudent['Discovery Method'],
+        tempStudent['Referred By'],
+        tempStudent['Other']
       ]];
     
       google.script.run
@@ -602,11 +719,24 @@
     const currentTeacherName = document.getElementById('addCurrentTeacherName').value;
     const currentTeacherEmail = document.getElementById('addCurrentTeacherEmail').value;
     const enrolledInEEC = document.getElementById('addEnrolledInEEC').value;
+    const discoverFLS = document.getElementById('addDiscoverFLS').value;
+    const schoolTour = document.getElementById('addSchoolTour').value;
+    const discoveryMethod = document.getElementById('addDiscoveryMethod').value;
+    const referredBy = document.getElementById('addReferredBy').value;
+    const other = document.getElementById('addOther').value;
 
     // Define regular expression patterns for error handling
     const phonePattern = /^\(\d{3}\) \d{3}-\d{4}$/;
     const emailPattern = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9-]{2,})+$/;
 
+    // Define referral options
+    const referralOptions = [
+      'Referred by EEC/school family',
+      'Referred by employee',
+      'Referred by alumni',
+      'Referred by community partner'
+    ];
+    
     if (!firstName) {
       showError("Error: MISSING_FIRST_NAME");
       return true;
@@ -674,6 +804,30 @@
     if (!enrolledInEEC) {
       showError("Error: MISSING_EEC_STATUS");
       return true;
+    }
+    if (!discoverFLS) {
+      showError("Error: MISSING_DISCOVER_FLS");
+      return true;
+    }
+    if (!schoolTour) {
+      showError("Error: MISSING_SCHOOL_TOUR");
+      return true;
+    }
+    if (!discoveryMethod) {
+      showError("Error: MISSING_DISCOVERY_METHOD");
+      return true;
+    }
+    if (referralOptions.includes(discoveryMethod)) {
+      if (!referredBy || referredBy.trim() === '') {
+        showError("Error: MISSING_REFERRED_BY");
+        return true;
+      }
+    }
+    if (discoveryMethod === 'Other') {
+      if (!other || other.trim() === '') {
+        showError("Error: MISSING_OTHER");
+        return true;
+      }
     }
 
     return false;
@@ -1197,8 +1351,9 @@
     const subjectTemplate = document.getElementById('emailSubject');
     const bodyTemplate = document.getElementById('emailBody');
     
-    // Reset template warning
+    // Reset template warning and scroll position
     document.getElementById('templateWarning').style.display = 'none';
+    bodyTemplate.scrollTop = 0;
 
     // Extract email templates from APP_SETTINGS
     const emailTemplates = APP_SETTINGS.emailTemplateSettings;
@@ -1598,10 +1753,27 @@
       return item['Student ID'] === selectedStudentID;
     });
 
+    // Get references to special elements
+    const otherElement = document.getElementById('otherElement');
+    const referredByElement = document.getElementById('referredByElement');
+
+    // Handle special elements based on data presence
+    otherElement.style.display = student['Other'] ? '' : 'none';
+    otherElement.value = student['Other'] || '';
+
+    referredByElement.style.display = student['Referred By'] ? '' : 'none';
+    referredByElement.value = student['Referred By'] || '';
+
     Object.keys(STUDENT_KEY_MAPPINGS).forEach((id) => {
       const element = document.getElementById(id);
+
+      const otherElement = document.getElementById('otherElement');
+      const referredByElement = document.getElementById('referredByElement');
+
       if (element) {
-        element.value = clearAll || !student || student[STUDENT_KEY_MAPPINGS[id]] === undefined ? "" : student[STUDENT_KEY_MAPPINGS[id]];
+        element.value = clearAll || !student || student[STUDENT_KEY_MAPPINGS[id]] === undefined 
+        ? "" 
+        : student[STUDENT_KEY_MAPPINGS[id]];
       }
     });
 
@@ -1778,6 +1950,36 @@
       case "Error: MISSING_EEC_STATUS":
         title = warningIcon + "Missing EEC Status";
         message = "Please select the EEC enrollment status and try again.";
+        button1 = "Close";
+        break;
+
+      case "Error: MISSING_DISCOVER_FLS":
+        title = warningIcon + "Missing Attendee Status";
+        message = 'Please select the "Disover FLS" attendee status and try again.';
+        button1 = "Close";
+        break;
+      
+      case "Error: MISSING_SCHOOL_TOUR":
+        title = warningIcon + "Missing Attendee Status";
+        message = "Please select the school tour attendee status and try again.";
+        button1 = "Close";
+        break;
+
+      case "Error: MISSING_DISCOVERY_METHOD":
+        title = warningIcon + "Missing Discovery Method";
+        message = "Please select the discovery method and try again.";
+        button1 = "Close";
+        break;
+
+      case "Error: MISSING_REFERRED_BY":
+        title = warningIcon + "Missing Referral Name";
+        message = "Please enter a referral name and try again.";
+        button1 = "Close";
+        break;
+
+      case "Error: MISSING_OTHER":
+        title = warningIcon + "Missing Other Information";
+        message = "Please enter the other information and try again.";
         button1 = "Close";
         break;
       
@@ -1960,8 +2162,8 @@
   }
 
   function updateColors() {
-    const selectColorElements = document.querySelectorAll('#gender, #dateOfBirth, #incomingGrade, #gradeStatus, #enrollmentManager, #enrolledInEEC, #evaluationDueDate, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningDate, #screeningTime, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminSubmissionDate, #adminAcceptance, #acceptanceDueDate, #acceptanceEmailSent, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
-    const inputColorElements = document.querySelectorAll('#parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail');
+    const selectColorElements = document.querySelectorAll('#gender, #dateOfBirth, #incomingGrade, #gradeStatus, #enrollmentManager, #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationDueDate, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningDate, #screeningTime, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminSubmissionDate, #adminAcceptance, #acceptanceDueDate, #acceptanceEmailSent, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
+    const inputColorElements = document.querySelectorAll('#parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail, #referredBy, #other');
     const noColorElements = document.querySelectorAll('#notes');
 
     selectColorElements.forEach(element => {
