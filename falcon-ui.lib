@@ -1028,7 +1028,7 @@
     padding: 5px;
     margin: 0 10px 0 10px;
     width: calc(100% - 20px);
-    height: 250px;
+    height: 125px;
     box-sizing: border-box;
     overflow: scroll;
     overflow-x: hidden;
@@ -1245,7 +1245,7 @@
     
     setTimeout(() => {
       resetModal();
-    }, 100); // Adjust this delay to match your modal's close animation duration
+    }, 200); // Adjust this delay to match your modal's close animation duration
   }
 
 </script>
