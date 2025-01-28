@@ -1,4 +1,4 @@
-/** Falcon Enrollment - Web App v4.1 **/
+/** Falcon Enrollment - Web App v4.2 **/
 /** Falcon EDU © 2023-2025 All Rights Reserved **/
 /** Created by: Nick Zagorin **/
 
@@ -75,7 +75,7 @@ function getNavbar(activePage) {
 
       function showAbout() {
         const title = "<i class='bi bi-info-circle'></i>About Falcon Enrollment";
-        const message = "Web App Version: 4.1<br>Build: 27.011525 <br><br>Created by: Nick Zagorin<br>© 2023-2025 - All rights reserved";
+        const message = "Web App Version: 4.2<br>Build: 28.011625 <br><br>Created by: Nick Zagorin<br>© 2023-2025 - All rights reserved";
         showModal(title, message, "Close");
       }
     </script>
@@ -659,13 +659,9 @@ function writeSettings(userSettings, appSettings) {
 // FILE FUNCTIONS //
 ////////////////////
 
-function getCsv(dataType) {
+function getCsv() {
   try {
-    let data;
-    
-    if (dataType === 'studentData') {
-      data = STUDENT_DATA_SHEET.getDataRange().getDisplayValues();
-    }
+    const data = STUDENT_DATA_SHEET.getDataRange().getDisplayValues();
 
     return data.map(rowArray => {
       return rowArray.map(field => {
@@ -706,14 +702,10 @@ function getCsv(dataType) {
 }
 
 /** Export data as a .xlsx file **/
-function getXlsx(dataType) {
+function getXlsx() {
   try {
     const spreadsheetId = SpreadsheetApp.getActive().getId();
-    let sheetId;
-    
-    if (dataType === 'studentData') {
-      sheetId = STUDENT_DATA_SHEET.getSheetId();
-    }
+    const sheetId = STUDENT_DATA_SHEET.getSheetId();
 
     // Construct the export URL
     const url = "https://docs.google.com/spreadsheets/d/" + spreadsheetId + "/export?format=xlsx&gid=" + sheetId;
