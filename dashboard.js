@@ -1624,13 +1624,8 @@
     exportDataModalButton.onclick = function() {
       busyFlag = true;
     
-      const dataType = document.getElementById('dataTypeSelect').value;
       const fileType = document.getElementById('fileTypeSelect').value;
-      let fileName;
-
-      if (dataType === 'studentData') {
-        fileName = 'Student Enrollment Data - ' + APP_SETTINGS.schoolSettings.schoolYear;
-      }
+      const fileName = 'Student Enrollment Data - ' + APP_SETTINGS.schoolSettings.schoolYear;
       
       switch (fileType) {
         case 'csv':
@@ -1653,7 +1648,7 @@
               }
               busyFlag = false;
             })
-          .getCsv(dataType);
+          .getCsv();
           break;
         case 'xlsx':
           google.script.run
@@ -1682,7 +1677,7 @@
               }
               busyFlag = false;
             })
-          .getXlsx(dataType);
+          .getXlsx();
           break;
       }
       
