@@ -828,10 +828,6 @@
   /* TABLE CLASS */
   /***************/
 
-  /***************/
-  /* TABLE CLASS */
-  /***************/
-
   /* Table formatting */
   .table-wrapper {
     display: flex;
