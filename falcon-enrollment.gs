@@ -1,4 +1,4 @@
-/** Falcon Enrollment - Web App v4.3 **/
+/** Falcon Enrollment - Web App v5.0.1 **/
 /** Falcon EDU © 2023-2025 All Rights Reserved **/
 /** Created by: Nick Zagorin **/
 
@@ -7,7 +7,6 @@
 //////////////////////
 
 const STUDENT_DATA_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Student Data');
-const CONSOLE_SHEET = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Console');
 
 ///////////////////////////
 // PAGE RENDER FUNCTIONS //
@@ -75,8 +74,8 @@ function getNavbar(activePage) {
 
       function showAbout() {
         const title = "<i class='bi bi-info-circle'></i>About Falcon Enrollment";
-        const message = "Web App Version: 4.3<br>Build: 29.020325 <br><br>Created by: Nick Zagorin<br>© 2023-2025 - All rights reserved";
-        showModal(title, message, "Close");
+        const message = "<b>Web App Version:</b> 5.0.1<br><b>Build:</b> 34.060525 <br><br>© 2023-2025 - All rights reserved";
+        showAlertModal(title, message, "Close");
       }
     </script>
     </div>`;
@@ -132,7 +131,7 @@ function getSheetData(sheet) {
   });
 }
 
-/** Get ID cache **/
+/** Get ID cache
 function getIDCache() {
   const sheets = [
     STUDENT_DATA_SHEET
@@ -148,6 +147,64 @@ function getIDCache() {
   }, []);
 
   return ids;
+}**/
+
+/** Get ID **/
+function getId(count = 1, sheetNames = [STUDENT_DATA_SHEET]) {
+  const lock = LockService.getScriptLock();
+  
+  try {
+    lock.waitLock(10000); // Wait for lock (timeout after 10 seconds)
+    const cache = CacheService.getScriptCache();
+    const reservedIds = new Set(JSON.parse(cache.get('reservedIds') || '[]').map(Number));
+
+    // Use a single Set for all existing IDs (reserved + sheet IDs)
+    const idSet = new Set(reservedIds);
+    
+    for (const sheet of sheetNames) {
+      const data = sheet.getDataRange().getValues();
+      if (data.length < 2) continue; // Skip empty sheets
+      
+      const headers = data[0];
+      
+      // Locate ID columns (case-insensitive)
+      const idColumnIndices = headers.reduce((indices, header, colIndex) => {
+        if (header.toLowerCase().includes("id")) indices.push(colIndex);
+        return indices;
+      }, []);
+      
+      if (idColumnIndices.length === 0) continue; // No ID column found
+      
+      // Collect IDs (assume all are valid numbers)
+      for (let i = 1; i < data.length; i++) {
+        for (const colIndex of idColumnIndices) {
+          const id = Number(data[i][colIndex]); // Directly convert to number
+          idSet.add(id); // No need for NaN check
+        }
+      }
+    }
+    
+    // Generate unique IDs, ensuring the lowest available ones are used
+    const generatedIds = [];
+    let currentId = 1;
+    
+    while (generatedIds.length < count) {
+      if (!idSet.has(currentId)) {
+        const formattedId = String(currentId).padStart(6, '0');
+        generatedIds.push(formattedId);
+        idSet.add(currentId); // Mark as used
+      }
+      currentId++;
+    }
+    
+    // Update cache with new reserved IDs
+    const updatedReservedIds = [...reservedIds, ...generatedIds.map(Number)];
+    cache.put('reservedIds', JSON.stringify(updatedReservedIds), 120); // Cache for 2 mins
+    
+    return count === 1 ? generatedIds[0] : generatedIds;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 ////////////////////
@@ -403,10 +460,22 @@ function createEmail(recipient, subject, body, attachments) {
 // SCHEDULE FUNCTIONS //
 ////////////////////////
 
+// Column indices object for better maintainability
+const COLS = {
+  STATUS: 1,  // Column B
+  STUDENT_NAME: 2, // Column C
+  EVALUATION_DATE: 20, // Column U
+  EVALUATION_FORM: 22, // Column W
+  SCREENING_DATE: 24, // Column Y
+  SCREENING_TIME: 25, // Column Z
+  SUBMISSION_DATE: 30, // Column AE
+  ACCEPTANCE_DATE: 32 // Column AG
+};
+
 function getAllDates() {
   // Get data once and pass it to all functions
   const data = STUDENT_DATA_SHEET.getDataRange().getDisplayValues();
-  const headers = data[0];
+
   // Filter for only active students before processing
   const rows = data.slice(1).filter(row => row[COLS.STATUS] === 'Active');
   
@@ -422,18 +491,6 @@ function getAllDates() {
 function sortByDate(arr) {
   return arr.sort((a, b) => new Date(b.date) - new Date(a.date));
 }
-
-// Column indices object for better maintainability
-const COLS = {
-  STATUS: 1,  // Column B
-  STUDENT_NAME: 2,
-  EVALUATION_DATE: 15,
-  EVALUATION_FORM: 17,
-  SCREENING_DATE: 19,
-  SCREENING_TIME: 20,
-  SUBMISSION_DATE: 25,
-  ACCEPTANCE_DATE: 27
-};
 
 function getEvaluationDates(rows) {
   return sortByDate(
@@ -475,7 +532,7 @@ function getAcceptanceDates(rows) {
     rows
       .filter(row => row[COLS.ACCEPTANCE_DATE])
       .map(row => {
-        const documentStatus = row.slice(30, 39).map(status => 
+        const documentStatus = row.slice(35, 44).map(status => 
           status || "Status missing"
         );
         
