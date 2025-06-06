@@ -251,9 +251,8 @@
           ul: [
             "Tuition payments are due one month in advance, from August 10th through May 10th.",
             "Families with existing students do not need to create a new account. FLS will add new student(s) to their existing account.",
-            "Blackbaud Tuition Management charges a service charge for credit/debit card payments.",
-            "Blackbaud Tuition Management charges a fee for failed ACH/check payments.",
-            "Blackbaud Tuition Management charges a late fee for delinquent payments.",
+            "Blackbaud Tuition Management charges a Platform Fee for ACH or credit/debit card payments.",
+            "Blackbaud Tuition Management charges a fee for any failed or delinquent payments.",
             { text: "If you had a Blackbaud Tuition Management EEC account, it will be closed. Please create a new Blackbaud Tuition Management account. Enrollment information can be found in the 'Blackbaud Tuition Information' document.", bold: true, decoration: 'underline' }
           ], margin: [20, 0, 0, 5] 
         },
@@ -277,8 +276,8 @@
         {
           ul: [
             "Pay the entire school year's tuition in advance to receive a 3% discount.",
-            "Blackbaud Tuition Management charges a service charge for credit/debit card payments.",
-            "Blackbaud Tuition Management charges a fee for failed ACH/check payments.",
+            "Blackbaud Tuition Management charges a Platform Fee for ACH or credit/debit card payments.",
+            "Blackbaud Tuition Management charges a fee for any failed or delinquent payments.",
             { text: "If you had a Blackbaud Tuition Management EEC account, it will be closed. Please create a new Blackbaud Tuition Management account. Enrollment information can be found in the 'Blackbaud Tuition Information' document.", bold: true, decoration: 'underline' }
           ], margin: [20, 0, 0, 5] 
         },
