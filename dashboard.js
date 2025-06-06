@@ -32,7 +32,7 @@
     'reportCard': 'Report Card', 'iepDocumentation': 'IEP Documentation', 'screeningFee': 'Screening Fee', 
     
     // Student acceptance
-    'adminSubmissionDate': 'Admin Submission Date', 'adminAcceptance': 'Admin Acceptance', 'acceptanceDueDate': 'Acceptance Due Date', 'acceptanceEmail': 'Acceptance Email Sent', 'familyAcceptance': 'Family Acceptance',
+    'adminSubmissionDate': 'Admin Submission Date', 'adminAcceptance': 'Admin Acceptance', 'acceptanceDueDate': 'Acceptance Due Date', 'acceptanceEmail': 'Acceptance Email', 'familyAcceptance': 'Family Acceptance',
     
     // Student acceptance documents
     'blackbaudAccount': 'Blackbaud Account', 'birthCertificatePassport': 'Birth Certificate/Passport', 'immunizationRecords': 'Immunization Records', 'admissionContractForm': 'Admission Contract Form', 'tuitionPaymentForm': 'Tuition Payment Form', 'medicalConsentForm': 'Medical Consent Form', 'emergencyContactsForm': 'Emergency Contacts Form', 'techConsentForm': 'Technology Consent Form', 'registrationFee': 'Registration Fee',
@@ -47,7 +47,6 @@
 
   // Global IDs
   let previousStudentID;
-  let cachedID = null;
   
   // Global flags
   let saveFlag = true; // True if all changes saved, false if unsaved changes
@@ -63,11 +62,6 @@
     const loadingIndicator = document.getElementById('loading-indicator');
 
     try {
-      // Show loading indicator and hide page elements
-      loadingIndicator.style.display = 'block';
-      toolbar.style.display = 'none';
-      page.style.display = 'none';
-
       // Fetch data in parallel
       const [studentData, settings] = await Promise.all([
         new Promise((resolve, reject) => {
@@ -238,21 +232,11 @@
 
           // Check if it's the discoveryMethod select box
           if (select.id === "discoveryMethod") {
-            referredByElement.style.display = 'none';
-            referredByInput.value = '';
-            referredByInput.style.backgroundColor = '';
-            otherElement.style.display = 'none';
-            otherInput.value = '';
-            otherInput.style.backgroundColor = '';
+            removeProfileDynamicRows();
           }
 
           if (select.id === "addDiscoveryMethod") {
-            addReferredByElement.style.display = 'none';
-            addReferredByInput.value = '';
-            addReferredByInput.style.backgroundColor = '';
-            addOtherElement.style.display = 'none';
-            addOtherInput.value = '';
-            addOtherInput.style.backgroundColor = '';
+            removeAddStudentDynamicRows();
           }
         }
       });
@@ -271,6 +255,8 @@
     });
 
     // Add event listeners for 'Discovery method' in Student Profile and Add Student 
+    const outreachInfoTable = document.getElementById('outreachInfoTable');
+    const addOutreachInfoTable = document.getElementById('addOutreachInfoTable');
     const referralOptions = [
       'Referred by EEC/school family',
       'Referred by employee',
@@ -278,48 +264,74 @@
       'Referred by community partner'
     ];
 
-    discoveryMethodSelect.addEventListener('change', function (event) {
+    discoveryMethodSelect.addEventListener('change', function () {
       const selectedValue = discoveryMethodSelect.value;
+      removeProfileDynamicRows(); // Clear any existing
+
+      let inputId;
+
       if (referralOptions.includes(selectedValue)) {
-        referredByElement.style.display = '';
-        otherElement.style.display = 'none';
-        // Reset both value and background color
-        otherInput.value = '';
-        otherInput.style.backgroundColor = '';
+        const row = outreachInfoTable.insertRow(-1);
+        row.classList.add('dynamic-row');
+        inputId = 'referredBy';
+        row.innerHTML = `
+          <td>Referred By:</td>
+          <td><input class="table-input" type="text" id="${inputId}"></td>
+        `;
       } else if (selectedValue === 'Other') {
-        referredByElement.style.display = 'none';
-        otherElement.style.display = '';
-        // Reset both value and background color
-        referredByInput.value = '';
-        referredByInput.style.backgroundColor = '';
-      } else {
-        referredByElement.style.display = 'none';
-        otherElement.style.display = 'none';
-        // Reset both value and background color for both inputs
-        referredByInput.value = '';
-        referredByInput.style.backgroundColor = '';
-        otherInput.value = '';
-        otherInput.style.backgroundColor = '';
+        const row = outreachInfoTable.insertRow(-1);
+        row.classList.add('dynamic-row');
+        inputId = 'other';
+        row.innerHTML = `
+          <td>Other:</td>
+          <td><input class="table-input" type="text" id="${inputId}"></td>
+        `;
+      }
+
+      // Attach color input listener if applicable
+      if (inputId) {
+        const newInput = document.getElementById(inputId);
+        if (newInput) {
+          newInput.addEventListener('input', () => {
+            saveAlert();
+            newInput.style.backgroundColor = getColor(newInput);
+          });
+        }
       }
     });
 
-    addDiscoveryMethodSelect.addEventListener('change', function (event) {
+    addDiscoveryMethodSelect.addEventListener('change', function () {
       const selectedValue = addDiscoveryMethodSelect.value;
+      removeAddStudentDynamicRows(); // Clear any existing
+
       if (referralOptions.includes(selectedValue)) {
-        addReferredByElement.style.display = '';
-        addOtherElement.style.display = 'none';
-        addOtherInput.value = '';
+        const row = addOutreachInfoTable.insertRow(-1);
+        
+        row.classList.add('dynamic-row');
+        row.innerHTML = `
+          <td>Referred By:</td>
+          <td><input class="table-input" type="text" id="addReferredBy"></td>
+        `;
       } else if (selectedValue === 'Other') {
-        addReferredByElement.style.display = 'none';
-        addOtherElement.style.display = '';
-        addReferredByInput.value = '';
-      } else {
-        addReferredByElement.style.display = 'none';
-        addOtherElement.style.display = 'none';
-        addReferredByInput.value = '';       
-        addOtherInput.value = '';
+        const row = addOutreachInfoTable.insertRow(-1);
+        
+        row.classList.add('dynamic-row');
+        row.innerHTML = `
+          <td>Other:</td>
+          <td><input class="table-input" type="text" id="addOther"></td>
+        `;
       }
     });
+
+    function removeProfileDynamicRows() {
+      const dynamicRows = outreachInfoTable.querySelectorAll('.dynamic-row');
+      dynamicRows.forEach(row => row.remove());
+    }
+
+    function removeAddStudentDynamicRows() {
+      const dynamicRows = addOutreachInfoTable.querySelectorAll('.dynamic-row');
+      dynamicRows.forEach(row => row.remove());
+    }
 
     // Add paste event listeners to rich text inputs
     const richTextBoxes = document.querySelectorAll('.rich-text-box');
@@ -437,36 +449,6 @@
     console.log("Complete!");
   }
 
-  /////////////////////
-  // MODAL FUNCTIONS //
-  /////////////////////
-
-  function resetModal() {
-    const modalInputs = document.querySelectorAll('#addStudentModal input, #addStudentModal select, #renameStudentModal input, #emailModal input, #emailModal select, #emailBody, #exportFormsModal input, #exportFormsModal select, #exportDataModal input, #exportDataModal select');
-    
-    modalInputs.forEach(function(input) {
-      if (input.id === 'emailBody') {
-        input.innerHTML = '';
-      } 
-      else if (input.id === 'templateSelect' || input.id === 'formSelect' || input.id === 'dataTypeSelect' || input.id === 'fileTypeSelect') {
-        input.selectedIndex = 0; // Reset to the first option
-      } 
-      else if (input.id === 'addReferredBy' || input.id === 'addOther') {
-        document.getElementById('addReferredByElement').style.display = 'none';
-        document.getElementById('addOtherElement').style.display = 'none'; 
-      }
-      else {
-        input.value = '';
-      }
-    });
-
-    // Reset the scroll position of all modal bodies
-    const modalBodies = document.querySelectorAll('.modal-htmlbody');
-    modalBodies.forEach(modalBody => {
-      modalBody.scrollTop = 0;
-    });
-  }
-
   //////////////////////////////
   // ACTIVE/ARCHIVE DATA VIEW //
   //////////////////////////////
@@ -511,49 +493,46 @@
     }
 
     const studentNameSelectBox = document.getElementById('studentName');
-
     if (studentNameSelectBox.options.length === 0) {
       showError("Error: MISSING_STUDENT_DATA");
       return;
     }
 
     const selectedStudentID = studentNameSelectBox.value;
-    
+
     // Create working copies
     const tempStudentData = [...STUDENT_DATA];
     const student = tempStudentData.find(item => item['Student ID'] === selectedStudentID);
 
-    // Update student data
-    const referralOptions = [
-      'Referred by EEC/school family',
-      'Referred by employee',
-      'Referred by alumni',
-      'Referred by community partner'
-    ];
-    
+    // Update static fields
     Object.entries(STUDENT_KEY_MAPPINGS).forEach(([elementId, dataKey]) => {
       const element = document.getElementById(elementId);
       if (element) {
-        // Assign value to the student object
         student[dataKey] = element.value;
       }
     });
 
+    // Update dynamic fields
+    student['Referred By'] = (document.getElementById('referredBy') || {}).value || '';
+    student['Other']       = (document.getElementById('other') || {}).value || '';
+
     const studentDataArray = [[
-        student['Student ID'],
-        student['Status'],
-        student['Student Name'],
-        ...Object.keys(STUDENT_KEY_MAPPINGS).map(key => student[STUDENT_KEY_MAPPINGS[key]])
+      student['Student ID'],
+      student['Status'],
+      student['Student Name'],
+      ...Object.keys(STUDENT_KEY_MAPPINGS).map(key => student[STUDENT_KEY_MAPPINGS[key]])
     ]];
-    
+
     busyFlag = true;
     showToast("", "Saving changes...", 5000);
+
+    console.log(studentDataArray);
 
     google.script.run
       .withSuccessHandler(() => {
         STUDENT_DATA = tempStudentData;
         document.getElementById('saveChangesButton').classList.remove('tool-bar-button-unsaved');
-               
+
         showToast("", `'${student['Student Name']}' saved successfully!`, 5000);
         playNotificationSound("success");
 
@@ -562,20 +541,18 @@
       })
       .withFailureHandler((error) => {
         const errorString = String(error);
-        
+
         if (errorString.includes("401")) {
           sessionError();
-        }
-        else if (errorString.includes("permission")) {
+        } else if (errorString.includes("permission")) {
           showError("Error: PERMISSION");
-        }
-        else {
+        } else {
           showError(error.message);
         }
         saveFlag = true;
         busyFlag = false;
       })
-    .saveStudentData(studentDataArray);
+      .saveStudentData(studentDataArray);
   }
 
   /////////////////
@@ -593,7 +570,7 @@
       return;
     }
 
-    showHtmlModal("addStudentModal");
+    showActionModal("addStudentModal");
 
     const addStudentModalButton = document.getElementById("addStudentModalButton");
 
@@ -639,15 +616,14 @@
         '"Discover FLS" Attendee': document.getElementById('addDiscoverFLS').value,
         'School Tour Attendee': document.getElementById('addSchoolTour').value,
         'Discovery Method': document.getElementById('addDiscoveryMethod').value,
-        'Referred By': document.getElementById('addReferredBy').value,
-        'Other': document.getElementById('addOther').value
+        'Referred By': (document.getElementById('addReferredBy') || {}).value || '',
+        'Other': (document.getElementById('addOther') || {}).value || ''
       };
 
-      closeHtmlModal("addStudentModal");
+      closeActionModal("addStudentModal");
       showToast("", "Adding student...", 5000);
 
-      await getAvailableID();
-      tempStudent['Student ID'] = cachedID;
+      tempStudent['Student ID'] = await getAvailableId();
 
       // Build the array of data for the sheet
       const newStudentArray = [[
@@ -722,8 +698,18 @@
     const discoverFLS = document.getElementById('addDiscoverFLS').value;
     const schoolTour = document.getElementById('addSchoolTour').value;
     const discoveryMethod = document.getElementById('addDiscoveryMethod').value;
-    const referredBy = document.getElementById('addReferredBy').value;
-    const other = document.getElementById('addOther').value;
+    let referredBy = '';
+    let other = '';
+
+    const referredByInput = document.getElementById('addReferredBy');
+    if (referredByInput) {
+      referredBy = referredByInput.value;
+    }
+
+    const otherInput = document.getElementById('addOther');
+    if (otherInput) {
+      other = otherInput.value;
+    }
 
     // Define regular expression patterns for error handling
     const phonePattern = /^\(\d{3}\) \d{3}-\d{4}$/;
@@ -866,7 +852,7 @@
     const warningIcon = '<i class="bi bi-exclamation-triangle-fill" style="color: var(--warning-color); margin-right: 10px;"></i>';
     const message = `Are you sure you want to archive the data for '${selectedStudent['Student Name']}'?`;
     const title = `${warningIcon}Archive Student`;
-    const buttonText = await showModal(title, message, "Cancel", "Archive");
+    const buttonText = await showAlertModal(title, message, "Cancel", "Archive");
 
     if (buttonText === "Cancel") {
       return;
@@ -963,7 +949,7 @@
     document.getElementById('currentStudentName').innerHTML = oldStudentName;
 
     // Show the rename modal
-    showHtmlModal("renameStudentModal");
+    showActionModal("renameStudentModal");
     const renameStudentModalButton = document.getElementById("renameStudentModalButton");
     
     renameStudentModalButton.onclick = async function() {
@@ -980,8 +966,7 @@
         const newStudentName = lastName + ", " + firstName;
         const studentStatus = selectedStudent['Status'];
 
-        // Close modal immediately
-        closeHtmlModal("renameStudentModal");
+        closeActionModal("renameStudentModal");
         
         // Show initial toast
         showToast("", "Renaming student...", 5000);
@@ -1071,7 +1056,7 @@
     const message = `Are you sure you want to activate the data for '${selectedStudentName}'?`;
     const title = `${warningIcon}Activate Student`;
 
-    const buttonText = await showModal(title, message, "Cancel", "Activate");
+    const buttonText = await showAlertModal(title, message, "Cancel", "Activate");
 
     if (buttonText === "Cancel") {
       return;
@@ -1089,8 +1074,8 @@
         STUDENT_DATA.find(student => student['Student ID'] === selectedStudentID)['Status'] = 'Active';
         updateStudentNames();
 
-        showToast("", `'${selectedStudentName}' activated successfully!`, 5000);
         playNotificationSound("success");
+        showToast("", `'${selectedStudentName}' activated successfully!`, 5000);
         busyFlag = false;
       })
       .withFailureHandler((error) => {
@@ -1153,7 +1138,7 @@
     const message = `Are you sure you want to delete the data for '${selectedStudentName}'? This action cannot be undone.`;
     const title = `${warningIcon}Delete Student`;
 
-    const buttonText = await showModal(title, message, "Cancel", "Delete");
+    const buttonText = await showAlertModal(title, message, "Cancel", "Delete");
 
     if (buttonText === "Cancel") {
       return;
@@ -1179,7 +1164,7 @@
 
         updateStudentNames();
                   
-        const toastMessage = `'${selectedStudent}' deleted successfully!`;
+        const toastMessage = `'${selectedStudentName}' deleted successfully!`;
         playNotificationSound("remove");
         showToast("", toastMessage, 5000);
         busyFlag = false;
@@ -1237,10 +1222,10 @@
     
     // Reset the warning before the modal is opened
     document.getElementById('templateWarning').style.display = 'none';
-    showHtmlModal("emailModal");
+    showActionModal("composeEmailModal");
 
-    const sendEmailModalButton = document.getElementById('sendEmailModalButton');
-    sendEmailModalButton.onclick = async function() {
+    const composeEmailModalButton = document.getElementById('composeEmailModalButton');
+    composeEmailModalButton.onclick = async function() {
       busyFlag = true;
         
       if (sendEmailErrorCheck()) {
@@ -1254,7 +1239,7 @@
       const body = document.getElementById('emailBody').innerHTML;
       let attachments = [];
 
-      closeHtmlModal("emailModal");
+      closeActionModal("composeEmailModal");
 
       try {
         const toastMessage = template === "acceptance" || template === "acceptanceConditional"
@@ -1571,40 +1556,56 @@
       showError("Error: OPERATION_IN_PROGRESS");
       return;
     }
-    
-    showHtmlModal("exportFormsModal");
+
+    showActionModal("exportFormsModal");
     const exportFormsModalButton = document.getElementById('exportFormsModalButton');
-    
-    exportFormsModalButton.onclick = function() {
+
+    exportFormsModalButton.onclick = function () {
       busyFlag = true;
       const formType = document.getElementById('formSelect').value;
-      
-      closeHtmlModal("exportFormsModal");
 
-      setTimeout(function() {
+      closeActionModal("exportFormsModal");
+      showToast("", "Exporting form...", 5000);
+
+      setTimeout(() => {
+        let docDefinition, filename;
+
         switch (formType) {
           case 'Admission Contract':
-            pdfMake.createPdf(createAdmissionContract()).download('Admission Contract.pdf');
+            docDefinition = createAdmissionContract();
+            filename = 'Admission Contract.pdf';
             break;
           case 'Tuition Payment Options':
-            pdfMake.createPdf(createTuitionPaymentOptions()).download('Tuition Payment Options.pdf');
+            docDefinition = createTuitionPaymentOptions();
+            filename = 'Tuition Payment Options.pdf';
             break;
           case 'Medical Consent To Treat':
-            pdfMake.createPdf(createMedicalConsentToTreat()).download('Medical Consent To Treat.pdf');
+            docDefinition = createMedicalConsentToTreat();
+            filename = 'Medical Consent To Treat.pdf';
             break;
           case 'Student Emergency Contacts':
-            pdfMake.createPdf(createStudentEmergencyContacts()).download('Student Emergency Contacts.pdf');
+            docDefinition = createStudentEmergencyContacts();
+            filename = 'Student Emergency Contacts.pdf';
             break;
           case 'Technology Consent':
-            pdfMake.createPdf(createTechnologyUseConsent()).download('Technology Consent.pdf');
+            docDefinition = createTechnologyUseConsent();
+            filename = 'Technology Consent.pdf';
             break;
           case 'Blackbaud Tuition Information':
-            pdfMake.createPdf(createBlackbaudTuitionInformation()).download('Blackbaud Tuition Information.pdf');
+            docDefinition = createBlackbaudTuitionInformation();
+            filename = 'Blackbaud Tuition Information.pdf';
             break;
         }
 
-        busyFlag = false;
-      }, 100); // Short delay to allow UI update to process before PDF generation
+        const pdfDoc = pdfMake.createPdf(docDefinition);
+
+        pdfDoc.download(filename, () => {
+          // Callback runs *after* download is triggered
+          busyFlag = false;
+          playNotificationSound("success");
+          showToast("", "Form exported successfully!", 5000);
+        });
+      }, 100);
     };
   }
 
@@ -1618,11 +1619,13 @@
       return;
     }
     
-    showHtmlModal("exportDataModal");
+    showActionModal("exportDataModal");
     const exportDataModalButton = document.getElementById('exportDataModalButton');
     
     exportDataModalButton.onclick = function() {
       busyFlag = true;
+
+      showToast("", "Exporting data...", 5000);
     
       const fileType = document.getElementById('fileTypeSelect').value;
       const fileName = 'Student Enrollment Data - ' + APP_SETTINGS.schoolSettings.schoolYear;
@@ -1637,6 +1640,8 @@
               a.download = fileName + '.csv';
               a.click();
               busyFlag = false;
+              playNotificationSound("success");
+              showToast("", "Data exported successfully!", 5000);
             })
             .withFailureHandler((error) => {
               const errorString = String(error);
@@ -1649,7 +1654,7 @@
               busyFlag = false;
             })
           .getCsv();
-          break;
+        break;
         case 'xlsx':
           google.script.run
             .withSuccessHandler(function(data) {
@@ -1666,6 +1671,8 @@
               a.click();
               URL.revokeObjectURL(url);
               busyFlag = false;
+              playNotificationSound("success");
+              showToast("", "Data exported successfully!", 5000);
             })
             .withFailureHandler((error) => {
               const errorString = String(error);
@@ -1678,10 +1685,10 @@
               busyFlag = false;
             })
           .getXlsx();
-          break;
+        break;
       }
       
-      closeHtmlModal("exportDataModal");
+      closeActionModal("exportDataModal");
     };
   }
 
@@ -1743,36 +1750,52 @@
   // Update student profile fields
   function updateStudentData(selectedStudentID) {
     const clearAll = !selectedStudentID || selectedStudentID === "";
-    
+
     let student = clearAll ? {} : STUDENT_DATA.find(function(item) {
       return item['Student ID'] === selectedStudentID;
     });
 
-    // Get references to special elements
-    const otherElement = document.getElementById('otherElement');
-    const referredByElement = document.getElementById('referredByElement');
-
-    // Handle special elements based on data presence
-    otherElement.style.display = student['Other'] ? '' : 'none';
-    otherElement.value = student['Other'] || '';
-
-    referredByElement.style.display = student['Referred By'] ? '' : 'none';
-    referredByElement.value = student['Referred By'] || '';
-
+    // Populate static fields
     Object.keys(STUDENT_KEY_MAPPINGS).forEach((id) => {
       const element = document.getElementById(id);
-
-      const otherElement = document.getElementById('otherElement');
-      const referredByElement = document.getElementById('referredByElement');
-
       if (element) {
         element.value = clearAll || !student || student[STUDENT_KEY_MAPPINGS[id]] === undefined 
-        ? "" 
-        : student[STUDENT_KEY_MAPPINGS[id]];
+          ? "" 
+          : student[STUDENT_KEY_MAPPINGS[id]];
       }
     });
 
-    // Update colors in student profile fields
+    // Populate dynamic rows
+    const discoveryMethodSelect = document.getElementById('discoveryMethod');
+    if (discoveryMethodSelect) {
+      const method = student ? student['Discovery Method'] : '';
+      discoveryMethodSelect.value = method || "";
+
+      discoveryMethodSelect.dispatchEvent(new Event('change'));
+
+      const referralOptions = [
+        'Referred by EEC/school family',
+        'Referred by employee',
+        'Referred by alumni',
+        'Referred by community partner'
+      ];
+
+      let dynamicInputId = null;
+      if (referralOptions.includes(method)) {
+        dynamicInputId = 'referredBy';
+      } else if (method === 'Other') {
+        dynamicInputId = 'other';
+      }
+
+      if (dynamicInputId) {
+        const dynamicInput = document.getElementById(dynamicInputId);
+        if (dynamicInput) {
+          dynamicInput.value = student ? student[dynamicInputId === 'referredBy' ? 'Referred By' : 'Other'] || '' : '';
+          dynamicInput.style.backgroundColor = getColor(dynamicInput);
+        }
+      }
+    }
+
     updateColors();
 
     const saveChangesButton = document.getElementById('saveChangesButton');
@@ -1781,20 +1804,10 @@
     previousStudentID = selectedStudentID;
   }
 
-  function getIDCache() {
-    return new Promise((resolve, reject) => {  // Add reject parameter
+  async function getAvailableId() {
+    return new Promise((resolve, reject) => {
       google.script.run
-        .withSuccessHandler((idCache) => {
-          // Convert to Set for O(1) lookup and find first missing number
-          const idSet = new Set(idCache.map(id => parseInt(id, 10)));
-               
-          // Start from 1 and find first missing number
-          let i = 1;
-          while (idSet.has(i)) i++;
-                
-          // Format and return the result
-          resolve(i.toString().padStart(6, '0'));
-        })
+        .withSuccessHandler(resolve)
         .withFailureHandler((error) => {
           const errorString = String(error);
                 
@@ -1806,12 +1819,8 @@
           busyFlag = false;
           reject(error);  // Reject the promise so the error propagates
         })
-      .getIDCache();
+      .getId();
     });
-  }
-
-  async function getAvailableID() {
-    cachedID = await getIDCache();
   }
 
   function saveAlert() {
@@ -2080,7 +2089,7 @@
     }
     
     playNotificationSound("alert");
-    showModal(title, message, button1, button2);
+    showAlertModal(title, message, button1, button2);
   }
 
   async function sessionError() {
@@ -2089,7 +2098,7 @@
     const message = "The current session has expired. Please sign in with Google and try again.";
     
     playNotificationSound("alert");
-    const buttonText = await showModal(title, message, "Cancel", "Sign in");
+    const buttonText = await showAlertModal(title, message, "Cancel", "Sign in");
        
     if (buttonText === "Sign in") {
       const signInUrl = "https://accounts.google.com";
@@ -2157,7 +2166,7 @@
   }
 
   function updateColors() {
-    const selectColorElements = document.querySelectorAll('#gender, #dateOfBirth, #incomingGrade, #gradeStatus, #enrollmentManager, #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationDueDate, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningDate, #screeningTime, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminSubmissionDate, #adminAcceptance, #acceptanceDueDate, #acceptanceEmailSent, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
+    const selectColorElements = document.querySelectorAll('#gender, #dateOfBirth, #incomingGrade, #gradeStatus, #enrollmentManager, #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationDueDate, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningDate, #screeningTime, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminSubmissionDate, #adminAcceptance, #acceptanceDueDate, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
     const inputColorElements = document.querySelectorAll('#parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail, #referredBy, #other');
     const noColorElements = document.querySelectorAll('#notes');
 
