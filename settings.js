@@ -17,11 +17,6 @@
     const loadingIndicator = document.getElementById('loading-indicator');
     
     try {
-      // Show loading indicator
-      loadingIndicator.style.display = 'block';
-      toolbar.style.display = 'none';
-      page.style.display = 'none';
-
       // Fetch data in parallel (async not needed but allows for future data streams)
       const [appSettings] = await Promise.all([
         new Promise((resolve, reject) => {
@@ -475,7 +470,7 @@
     }
 
     playNotificationSound("alert");
-    showModal(title, message, button1, button2);
+    showAlertModal(title, message, button1, button2);
   }
 
   async function sessionError() {
@@ -484,7 +479,7 @@
     const message = "The current session has expired. Please sign in with Google and try again.";
     
     playNotificationSound("alert");
-    const buttonText = await showModal(title, message, "Cancel", "Sign in");
+    const buttonText = await showAlertModal(title, message, "Cancel", "Sign in");
        
     if (buttonText === "Sign in") {
       const signInUrl = "https://accounts.google.com";
