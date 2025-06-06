@@ -136,42 +136,37 @@
   /* Highlighted text classes */
   .highlight-green {
     background-color: var(--green);
-    margin: 10px 10px 0 10px;
+    margin-top: 20px;
     padding: 5px;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
   }
 
   .highlight-orange {
     background-color: var(--orange);
-    margin: 10px 10px 0 10px;
+    margin-top: 20px;
     padding: 5px;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
   }
 
   .highlight-red {
     background-color: var(--red);
-    margin: 10px 10px 0 10px;
+    margin-top: 20px;
     padding: 5px;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
   }
 
   .highlight-gray {
     background-color: var(--gray);
-    margin: 10px 10px 0 10px;
+    margin-top: 20px;
     padding: 5px;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
   }
 
   .highlight-none {
     background-color: var(--element-background-color);
-    margin: 10px 10px 0 10px;
+    margin-top: 20px;
     padding: 5px;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
   }
 </style>
 
