@@ -1,4 +1,4 @@
-<!-- FALCON UI LIBRARY v3.0 -->
+<!-- FALCON UI LIBRARY v3.3 -->
 <!--
   Falcon UI Usage Help:
     Transitions: 0.2s
@@ -545,7 +545,7 @@
   /***********************/
   .switch-container {
     background-color: var(--element-background-color);
-    border: 2px solid var(--element-accent-color);
+    border: 1px solid var(--element-accent-color);
     border-radius: 10px;
     padding-left: 5px;
     font-size: 16px;
@@ -606,11 +606,10 @@
   /***************/
   #chart-container {
     background-color: var(--element-background-color);
-    width: calc(100% - 20px);
-    margin: 10px 10px 0 10px;
+    margin: 10px 0 0 0;
     padding: 5px;
-    height: calc(100% - 59px);
-    border: 2px solid var(--element-accent-color);
+    height: 100%;
+    border: 1px solid var(--element-accent-color);
     border-radius: 10px;
     box-sizing: border-box;
   }
@@ -899,7 +898,6 @@
 		border-collapse: collapse;
 		width: 100%;
 		background-color: var(--element-accent-color);
-		color: white;
 		/* table-layout: fixed; // Toggle on for non-scrolling tables, off for horizontal scrolling */
 	}
 
@@ -926,7 +924,20 @@
   tbody td {
     background-color: var(--element-background-color);
 		color: var(--text-primary-color);
-	}
+    transition: background-color 0.2s ease;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--element-accent-color);
+  }
+
+  tbody tr:hover td {
+    background-color: var(--element-accent-color);
+  }
+  
+  tbody tr:last-child {
+    border-bottom: none; /* optional: cleaner bottom edge */
+  }
 
   .freeze-col-1 {
     position: sticky;
@@ -1018,7 +1029,6 @@
   }
 
   /* No header tables (forms, settings, etc.) */
-  
   .no-header-table-wrapper {
     margin-bottom: 20px;
   }
@@ -1027,15 +1037,37 @@
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
     overflow: hidden;
-    border: 2px solid var(--element-accent-color); /* one border around the whole table */
+    border: 1px solid var(--element-accent-color); /* one border around the whole table */
     table-layout: fixed; // Toggle on for non-scrolling tables, off for horizontal scrolling
   }
 
   .no-header-table td {
     overflow: hidden;
-    border: 2px solid var(--element-accent-color); /* thinner inner borders */
+    border: 1px solid var(--element-accent-color); /* thinner inner borders */
     white-space: nowrap;
     text-overflow: ellipsis;
+  }
+
+  .table-wrapper-fixed {
+    overflow: hidden;
+    border: 1px solid var(--element-accent-color); /* one border around the whole table */
+    border-radius: 10px;
+    table-layout: fixed; // Toggle on for non-scrolling tables, off for horizontal scrolling
+  }
+
+  .table-fixed {
+    border-spacing: 0;
+		border-collapse: collapse;
+		width: 100%;
+		background-color: var(--element-accent-color);
+		color: white;
+		table-layout: fixed;
+  }
+
+  /* Disable hover for .no-header-table and .table-fixed */
+  .no-header-table tbody tr:hover td,
+  .table-fixed tbody tr:hover td {
+    background-color: var(--element-background-color) !important;
   }
 
   /****************/
@@ -1089,7 +1121,7 @@
     overflow-x: hidden;
     padding-bottom: 20px;
     padding: 15px 10px 20px 10px;
-    display: flex;
+    display: flex; /* Change to block for full height column bodies */
     flex-direction: column;
   }
 
@@ -1124,7 +1156,7 @@
     box-sizing: border-box;
     padding-left: 5px;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
+    border: 1px solid var(--element-accent-color);
     height: 34px;
   }
 
@@ -1132,12 +1164,17 @@
     width: 100%;
     box-sizing: border-box;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
+    border: 1px solid var(--element-accent-color);
     height: 34px;
   }
 
-  .column-textarea {
+  textarea {
+    display: block;
     margin: 0;
+  }
+
+  .column-textarea {
+    margin-bottom: 20px;
     font-family: 'Roboto', sans-serif;
     font-size: 16px;
     background-color: var(--element-background-color);
@@ -1150,7 +1187,7 @@
     resize: none;
     border-bottom-left-radius: 10px;
     border-bottom-right-radius: 10px;
-    border: 2px solid var(--element-accent-color);
+    border: 1px solid var(--element-accent-color);
   }
 
   /*****************/
@@ -1214,7 +1251,7 @@
     border: none;
     height: 34px;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
+    border: 1px solid var(--element-accent-color);
   }
 
   .search-container .search-icon {
@@ -1238,7 +1275,7 @@
     overflow-wrap: break-word;
     overflow-x: hidden;
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
+    border: 1px solid var(--element-accent-color);
     margin-bottom: 20px;
   }
 
@@ -1277,13 +1314,13 @@
     color: var(--text-primary-color);
     background-color: var(--element-background-color);
     border-radius: 10px;
-    border: 2px solid var(--element-accent-color);
+    border: 1px solid var(--element-accent-color);
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    margin: 10px 70px 0 70px;
+    margin: 10px 70px 20px 70px;
   }
 </style>
 
@@ -1438,8 +1475,17 @@
     // Reset all select box values
     actionModal.querySelectorAll('select').forEach(select => select.selectedIndex = resetIndex);
 
+    // Reset all toggle switches
+    actionModal.querySelectorAll('input[type="checkbox"]').forEach(checkbox => checkbox.checked = false);
+
     // Reset scroll position
     actionModal.querySelector('.action-container').scrollTop = 0;
+
+    // Reset label preview (only needed for AutoRoster)
+    if (modalId == 'exportLabelsModal') {
+      document.getElementById('labelRow1').innerHTML = "<b>Student Name</b>";
+      document.getElementById('labelRow2').innerHTML = "";
+    }
   }
 
   function showSidebar(title, contentId) {
