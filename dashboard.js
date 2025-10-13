@@ -416,6 +416,22 @@
       }
     });
 
+    // Add event listener to prevent escaping dialogs
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        const dialog = document.querySelector('dialog[open]');
+        if (dialog) {
+          event.preventDefault(); // Prevent ESC from closing the dialog
+          
+          // Remove focus from all buttons within the dialog
+          const buttons = dialog.querySelectorAll('button');
+          buttons.forEach((button) => {
+            button.blur(); // Remove focus from button
+          });
+        }
+      }
+    });
+
     console.log("Complete!");
   }
 
@@ -525,8 +541,6 @@
 
     busyFlag = true;
     showToast("", "Saving changes...", 5000);
-
-    console.log(studentDataArray);
 
     google.script.run
       .withSuccessHandler(() => {
@@ -1655,6 +1669,7 @@
             })
           .getCsv();
         break;
+        
         case 'xlsx':
           google.script.run
             .withSuccessHandler(function(data) {
