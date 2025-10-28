@@ -77,168 +77,186 @@
               <i class="bi bi-search search-icon"></i>
               <input type="text" id="profileSearch" placeholder="Search...">
             </div>
-            <h2 class="rounded-top">Student Information</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Student name:</td>
-                  <td>
-                    <select class="table-select" id="studentName"></select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Gender:</td>
-                  <td>
-                    <select class="table-select" id="gender">
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Non-binary">Non-binary</option>
-                </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Date of birth:</td>
-                  <td>
-                    <input class="table-input" type="date" id="dateOfBirth">
-                  </td>
-                </tr>
-                <tr>
-                  <td>Incoming grade:</td>
-                  <td>
-                    <select class="table-select" id="incomingGrade">
-                  <option value="Transitional Kindergarten">Transitional Kindergarten</option>
-                  <option value="Kindergarten">Kindergarten</option>
-                  <option value="1st Grade">1st grade</option>
-                  <option value="2nd Grade">2nd grade</option>
-                  <option value="3rd Grade">3rd grade</option>
-                  <option value="4th Grade">4th grade</option>
-                  <option value="5th Grade">5th grade</option>
-                  <option value="6th Grade">6th grade</option>
-                  <option value="7th Grade">7th grade</option>
-                  <option value="8th Grade">8th grade</option>
-                </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Grade status:</td>
-                  <td>
-                    <select class="table-select" id="gradeStatus">
-                  <option value="Open">Open</option>
-                  <option value="Waitlist">Waitlist</option>
-                </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Enrollment manager:</td>
-                  <td>
-                    <select class="table-select" id="enrollmentManager"></select>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">Parent/Guardian Information</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Parent/guardian name:</td>
-                  <td><input class="table-input" type="text" id="parentGuardianName"></td>
-                </tr>
-                <tr>
-                  <td>Parent/guardian phone:</td>
-                  <td><input class="table-input" type="text" id="parentGuardianPhone"></td>
-                </tr>
-                <tr>
-                  <td>Parent/guardian email:</td>
-                  <td><input class="table-input" type="text" id="parentGuardianEmail"></td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">School/Teacher Information</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Current school name:</td>
-                  <td>
-                    <input class="table-input" type="text" id="currentSchoolName">
-                  </td>
-                </tr>
-                <tr>
-                  <td>Current teacher name:</td>
-                  <td>
-                    <input class="table-input" type="text" id="currentTeacherName">
-                  </td>
-                </tr>
-                <tr>
-                  <td>Current teacher email:</td>
-                  <td>
-                    <input class="table-input" type="text" id="currentTeacherEmail">
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">EEC Information</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Enrolled in EEC:</td>
-                  <td>
-                    <select class="table-select" id="enrolledInEEC">
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">Outreach Information</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table" id="outreachInfoTable">
-                <tr>
-                  <td>"Discover FLS" attendee:</td>
-                  <td>
-                    <select class="table-select" id="discoverFLS">
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>School tour attendee:</td>
-                  <td>
-                    <select class="table-select" id="schoolTour">
-                  <option value="Yes">Yes</option>
-                  <option value="No">No</option>
-                </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Discovery method:</td>
-                  <td>
-                    <select class="table-select" id="discoveryMethod">
-                  <option value="Current EEC/school family">Current EEC/school family</option>
-                  <option value="Word of mouth">Word of mouth</option>
-                  <option value="Visited campus for an event">Visited campus for an event</option>
-                  <option value="School website">School website</option>
-                  <option value="Social media (Facebook, Instagram, etc.)">Social media (Facebook, Instagram, etc.)</option>
-                  <option value="Online listings (Google, Yelp, Great Schools, etc.)">Online listings (Google, Yelp, Great Schools, etc.)</option>
-                  <option value="Newspaper">Newspaper</option>
-                  <option value="Referred by EEC/school family">Referred by EEC/school family</option>
-                  <option value="Referred by employee">Referred by FLCS employee</option>
-                  <option value="Referred by alumni">Referred by alumni</option>
-                  <option value="Referred by community partner">Referred by community partner</option>
-                  <option value="Drove by">Drove by</option>
-                  <option value="Received flyer/email">Received flyer/email</option>
-                  <option value="Other">Other</option>
-                  <option value="N/A">N/A</option>
-                </select>
-                  </td>
-                </tr>
-                <!-- 'Referred by' row insert here -->
-                <!-- 'Other' row insert here -->
-              </table>
-            </div>
-            <h2 class="rounded-top">Notes</h2>
-            <textarea class="column-textarea" style="height: 200px; margin-bottom: 0" id="notes"></textarea>
+            
+            <details open>
+              <summary>Student Information</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Student name:</td>
+                    <td>
+                      <select class="table-select" id="studentName"></select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Gender:</td>
+                    <td>
+                      <select class="table-select" id="gender">
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Non-binary">Non-binary</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Date of birth:</td>
+                    <td>
+                      <input class="table-input" type="date" id="dateOfBirth">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Incoming grade:</td>
+                    <td>
+                      <select class="table-select" id="incomingGrade">
+                    <option value="Transitional Kindergarten">Transitional Kindergarten</option>
+                    <option value="Kindergarten">Kindergarten</option>
+                    <option value="1st Grade">1st grade</option>
+                    <option value="2nd Grade">2nd grade</option>
+                    <option value="3rd Grade">3rd grade</option>
+                    <option value="4th Grade">4th grade</option>
+                    <option value="5th Grade">5th grade</option>
+                    <option value="6th Grade">6th grade</option>
+                    <option value="7th Grade">7th grade</option>
+                    <option value="8th Grade">8th grade</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Grade status:</td>
+                    <td>
+                      <select class="table-select" id="gradeStatus">
+                    <option value="Open">Open</option>
+                    <option value="Waitlist">Waitlist</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Enrollment manager:</td>
+                    <td>
+                      <select class="table-select" id="enrollmentManager"></select>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+
+            <details open>
+              <summary>Parent/Guardian Information</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Parent/guardian name:</td>
+                    <td><input class="table-input" type="text" id="parentGuardianName"></td>
+                  </tr>
+                  <tr>
+                    <td>Parent/guardian phone:</td>
+                    <td><input class="table-input" type="text" id="parentGuardianPhone"></td>
+                  </tr>
+                  <tr>
+                    <td>Parent/guardian email:</td>
+                    <td><input class="table-input" type="text" id="parentGuardianEmail"></td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+            
+            <details open>
+              <summary>School/Teacher Information</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Current school name:</td>
+                    <td>
+                      <input class="table-input" type="text" id="currentSchoolName">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Current teacher name:</td>
+                    <td>
+                      <input class="table-input" type="text" id="currentTeacherName">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Current teacher email:</td>
+                    <td>
+                      <input class="table-input" type="text" id="currentTeacherEmail">
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+
+            <details open>
+              <summary>EEC Information</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Enrolled in EEC:</td>
+                    <td>
+                      <select class="table-select" id="enrolledInEEC">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+            
+            <details open>
+              <summary>Outreach Information</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table" id="outreachInfoTable">
+                  <tr>
+                    <td>"Discover FLS" attendee:</td>
+                    <td>
+                      <select class="table-select" id="discoverFLS">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>School tour attendee:</td>
+                    <td>
+                      <select class="table-select" id="schoolTour">
+                    <option value="Yes">Yes</option>
+                    <option value="No">No</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Discovery method:</td>
+                    <td>
+                      <select class="table-select" id="discoveryMethod">
+                    <option value="Current EEC/school family">Current EEC/school family</option>
+                    <option value="Word of mouth">Word of mouth</option>
+                    <option value="Visited campus for an event">Visited campus for an event</option>
+                    <option value="School website">School website</option>
+                    <option value="Social media (Facebook, Instagram, etc.)">Social media (Facebook, Instagram, etc.)</option>
+                    <option value="Online listings (Google, Yelp, Great Schools, etc.)">Online listings (Google, Yelp, Great Schools, etc.)</option>
+                    <option value="Newspaper">Newspaper</option>
+                    <option value="Referred by EEC/school family">Referred by EEC/school family</option>
+                    <option value="Referred by employee">Referred by FLCS employee</option>
+                    <option value="Referred by alumni">Referred by alumni</option>
+                    <option value="Referred by community partner">Referred by community partner</option>
+                    <option value="Drove by">Drove by</option>
+                    <option value="Received flyer/email">Received flyer/email</option>
+                    <option value="Other">Other</option>
+                    <option value="N/A">N/A</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <!-- 'Referred by' row insert here -->
+                  <!-- 'Other' row insert here -->
+                </table>
+              </div>
+            </details>
+
+            <details open style="margin-bottom: 0">
+              <summary>Notes</summary>
+              <textarea class="column-textarea" style="height: 200px; margin-bottom: 0" id="notes"></textarea>
+            </details>
           </div>
         </div>
       </div>
@@ -252,253 +270,271 @@
             <b>No enrollments found!</b>
           </div>
           <div id="enrollmentDataTable">
-            <h2 class="rounded-top">Student Evaluation</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Evaluation due date:</td>
-                  <td>
-                    <input class="table-input" type="date" id="evaluationDueDate">
-                  </td>
-                </tr>
-                <tr>
-                  <td>Evaluation email sent:</td>
-                  <td>
-                    <select class="table-select" id="evaluationEmail">
-                <option value="Completed">Completed</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">Student Evaluation Documents</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Student evaluation form:</td>
-                  <td>
-                    <select class="table-select" id="evaluationForm">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">Student Screening</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Contacted to schedule:</td>
-                  <td>
-                    <select class="table-select" id="contactedToSchedule">
-                  <option value="In Progress">In progress</option>
+            
+            <details open>
+              <summary>Student Evaluation</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Evaluation due date:</td>
+                    <td>
+                      <input class="table-input" type="date" id="evaluationDueDate">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Evaluation email sent:</td>
+                    <td>
+                      <select class="table-select" id="evaluationEmail">
                   <option value="Completed">Completed</option>
+                  <option value="N/A">N/A</option>
                 </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Screening date:</td>
-                  <td>
-                    <input class="table-input" type="date" id="screeningDate">
-                  </td>
-                </tr>
-                <tr>
-                  <td>Screening time:</td>
-                  <td>
-                    <input class="table-input" type="time" id="screeningTime">
-                  </td>
-                </tr>
-                <td>Screening email sent:</td>
-                <td>
-                  <select class="table-select" id="screeningEmail">
-                <option value="Completed">Completed</option>
-                <option value="N/A">N/A</option>
-              </select>
-                </td>
-              </table>
-            </div>
-            <h2 class="rounded-top">Student Screening Documents</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Report card:</td>
-                  <td>
-                    <select class="table-select" id="reportCard">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>IEP documentation:</td>
-                  <td>
-                    <select class="table-select" id="iepDocumentation">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Screening fee:</td>
-                  <td>
-                    <select class="table-select" id="screeningFee">
-                <option value="Requested">Requested</option>
-                <option value="Paid (EEC)">Paid (EEC)</option>
-                <option value="Paid (TK/K)">Paid (TK/K)</option>
-                <option value="Paid (1st-8th)">Paid (1st-8th)</option>
-                <option value="N/A">N/A</option>
-                </select>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">Student Acceptance</h2>
-            <div class="no-header-table-wrapper">
-              <table class="no-header-table">
-                <tr>
-                  <td>Admin submission date:</td>
-                  <td>
-                    <input class="table-input" type="date" id="adminSubmissionDate">
-                  </td>
-                </tr>
-                <tr>
-                  <td>Admin acceptance:</td>
-                  <td>
-                    <select class="table-select" id="adminAcceptance">
-                <option value="In Review">In review</option>
-                <option value="Accepted">Accepted</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Acceptance due date:</td>
-                  <td>
-                    <input class="table-input" type="date" id="acceptanceDueDate">
-                  </td>
-                </tr>
-                <tr>
-                  <td>Acceptance email sent:</td>
-                  <td>
-                    <select class="table-select" id="acceptanceEmail">
-                <option value="Completed">Completed</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Family acceptance:</td>
-                  <td>
-                    <select class="table-select" id="familyAcceptance">
-                <option value="Pending">Pending</option>
-                <option value="Accepted">Accepted</option>
-                <option value="Rejected">Rejected</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-              </table>
-            </div>
-            <h2 class="rounded-top">Student Acceptance Documents</h2>
-            <div class="no-header-table-wrapper" style="margin-bottom: 0">
-              <table class="no-header-table">
-                <tr>
-                  <td>Blackbaud account:</td>
-                  <td>
-                    <select class="table-select" id="blackbaudAccount">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Birth certificate/passport:</td>
-                  <td>
-                    <select class="table-select" id="birthCertificatePassport">
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+
+            <details open>
+              <summary>Student Evaluation Documents</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Student evaluation form:</td>
+                    <td>
+                      <select class="table-select" id="evaluationForm">
                   <option value="Requested">Requested</option>
                   <option value="Received">Received</option>
                   <option value="N/A">N/A</option>
                 </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Immunization records:</td>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+
+            <details open>
+              <summary>Student Screening</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Contacted to schedule:</td>
+                    <td>
+                      <select class="table-select" id="contactedToSchedule">
+                    <option value="In Progress">In progress</option>
+                    <option value="Completed">Completed</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Screening date:</td>
+                    <td>
+                      <input class="table-input" type="date" id="screeningDate">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Screening time:</td>
+                    <td>
+                      <input class="table-input" type="time" id="screeningTime">
+                    </td>
+                  </tr>
+                  <td>Screening email sent:</td>
                   <td>
-                    <select class="table-select" id="immunizationRecords">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Admission contract form:</td>
-                  <td>
-                    <select class="table-select" id="admissionContractForm">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Tuition payment form:</td>
-                  <td>
-                    <select class="table-select" id="tuitionPaymentForm">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Medical consent form:</td>
-                  <td>
-                    <select class="table-select" id="medicalConsentForm">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Emergency contacts form:</td>
-                  <td>
-                    <select class="table-select" id="emergencyContactsForm">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Technology consent form:</td>
-                  <td>
-                    <select class="table-select" id="techConsentForm">
-                <option value="Requested">Requested</option>
-                <option value="Received">Received</option>
-                <option value="N/A">N/A</option>
-              </select>
-                  </td>
-                </tr>
-                <tr>
-                  <td>Registration fee:</td>
-                  <td>
-                    <select class="table-select" id="registrationFee">
-                <option value="Requested">Requested</option>
-                <option value="Paid">Paid</option>
-                <option value="N/A">N/A</option>
+                    <select class="table-select" id="screeningEmail">
+                  <option value="Completed">Completed</option>
+                  <option value="N/A">N/A</option>
                 </select>
                   </td>
-                </tr>
-              </table>
-            </div>
+                </table>
+              </div>
+            </details>
+
+            <details open>
+              <summary>Student Screening Documents</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Report card:</td>
+                    <td>
+                      <select class="table-select" id="reportCard">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>IEP documentation:</td>
+                    <td>
+                      <select class="table-select" id="iepDocumentation">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Screening fee:</td>
+                    <td>
+                      <select class="table-select" id="screeningFee">
+                  <option value="Requested">Requested</option>
+                  <option value="Paid (EEC)">Paid (EEC)</option>
+                  <option value="Paid (TK/K)">Paid (TK/K)</option>
+                  <option value="Paid (1st-8th)">Paid (1st-8th)</option>
+                  <option value="N/A">N/A</option>
+                  </select>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+
+            <details open>
+              <summary>Student Acceptance</summary>
+              <div class="no-header-table-wrapper">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Admin submission date:</td>
+                    <td>
+                      <input class="table-input" type="date" id="adminSubmissionDate">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Admin acceptance:</td>
+                    <td>
+                      <select class="table-select" id="adminAcceptance">
+                  <option value="In Review">In review</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Acceptance due date:</td>
+                    <td>
+                      <input class="table-input" type="date" id="acceptanceDueDate">
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Acceptance email sent:</td>
+                    <td>
+                      <select class="table-select" id="acceptanceEmail">
+                  <option value="Completed">Completed</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Family acceptance:</td>
+                    <td>
+                      <select class="table-select" id="familyAcceptance">
+                  <option value="Pending">Pending</option>
+                  <option value="Accepted">Accepted</option>
+                  <option value="Rejected">Rejected</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
+
+            <details open style="margin-bottom: 0">
+              <summary>Student Acceptance Documents</summary>
+              <div class="no-header-table-wrapper" style="margin-bottom: 0">
+                <table class="no-header-table">
+                  <tr>
+                    <td>Blackbaud account:</td>
+                    <td>
+                      <select class="table-select" id="blackbaudAccount">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Birth certificate/passport:</td>
+                    <td>
+                      <select class="table-select" id="birthCertificatePassport">
+                    <option value="Requested">Requested</option>
+                    <option value="Received">Received</option>
+                    <option value="N/A">N/A</option>
+                  </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Immunization records:</td>
+                    <td>
+                      <select class="table-select" id="immunizationRecords">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Admission contract form:</td>
+                    <td>
+                      <select class="table-select" id="admissionContractForm">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Tuition payment form:</td>
+                    <td>
+                      <select class="table-select" id="tuitionPaymentForm">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Medical consent form:</td>
+                    <td>
+                      <select class="table-select" id="medicalConsentForm">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Emergency contacts form:</td>
+                    <td>
+                      <select class="table-select" id="emergencyContactsForm">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Technology consent form:</td>
+                    <td>
+                      <select class="table-select" id="techConsentForm">
+                  <option value="Requested">Requested</option>
+                  <option value="Received">Received</option>
+                  <option value="N/A">N/A</option>
+                </select>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Registration fee:</td>
+                    <td>
+                      <select class="table-select" id="registrationFee">
+                  <option value="Requested">Requested</option>
+                  <option value="Paid">Paid</option>
+                  <option value="N/A">N/A</option>
+                  </select>
+                    </td>
+                  </tr>
+                </table>
+              </div>
+            </details>
           </div>
         </div>
       </div>
