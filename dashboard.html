@@ -130,12 +130,6 @@
                   </select>
                     </td>
                   </tr>
-                  <tr>
-                    <td>Enrollment manager:</td>
-                    <td>
-                      <select class="table-select" id="enrollmentManager"></select>
-                    </td>
-                  </tr>
                 </table>
               </div>
             </details>
@@ -229,15 +223,15 @@
                     <td>Discovery method:</td>
                     <td>
                       <select class="table-select" id="discoveryMethod">
-                    <option value="Current EEC/school family">Current EEC/school family</option>
+                    <option value="Current EEC or school family">Current EEC or school family</option>
                     <option value="Word of mouth">Word of mouth</option>
                     <option value="Visited campus for an event">Visited campus for an event</option>
                     <option value="School website">School website</option>
                     <option value="Social media (Facebook, Instagram, etc.)">Social media (Facebook, Instagram, etc.)</option>
                     <option value="Online listings (Google, Yelp, Great Schools, etc.)">Online listings (Google, Yelp, Great Schools, etc.)</option>
                     <option value="Newspaper">Newspaper</option>
-                    <option value="Referred by EEC/school family">Referred by EEC/school family</option>
-                    <option value="Referred by employee">Referred by FLCS employee</option>
+                    <option value="Referred by First Lutheran School family">Referred by First Lutheran School family</option>
+                    <option value="Referred by First Lutheran employee">Referred by First Lutheran employee</option>
                     <option value="Referred by alumni">Referred by alumni</option>
                     <option value="Referred by community partner">Referred by community partner</option>
                     <option value="Drove by">Drove by</option>
@@ -366,22 +360,10 @@
                     <td>IEP documentation:</td>
                     <td>
                       <select class="table-select" id="iepDocumentation">
-                  <option value="Requested">Requested</option>
-                  <option value="Received">Received</option>
-                  <option value="N/A">N/A</option>
-                </select>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>Screening fee:</td>
-                    <td>
-                      <select class="table-select" id="screeningFee">
-                  <option value="Requested">Requested</option>
-                  <option value="Paid (EEC)">Paid (EEC)</option>
-                  <option value="Paid (TK/K)">Paid (TK/K)</option>
-                  <option value="Paid (1st-8th)">Paid (1st-8th)</option>
-                  <option value="N/A">N/A</option>
-                  </select>
+                        <option value="Requested">Requested</option>
+                        <option value="Received">Received</option>
+                        <option value="N/A">N/A</option>
+                      </select>
                     </td>
                   </tr>
                 </table>
@@ -402,10 +384,10 @@
                     <td>Admin acceptance:</td>
                     <td>
                       <select class="table-select" id="adminAcceptance">
-                  <option value="In Review">In review</option>
-                  <option value="Accepted">Accepted</option>
-                  <option value="Rejected">Rejected</option>
-                </select>
+                        <option value="In Review">In review</option>
+                        <option value="Accepted">Accepted</option>
+                        <option value="Rejected">Rejected</option>
+                      </select>
                     </td>
                   </tr>
                   <tr>
@@ -600,10 +582,6 @@
                   </select>
                 </td>
               </tr>
-              <tr>
-                <td>Enrollment manager:</td>
-                <td><select class="table-select" id="addEnrollmentManager"></select></td>
-              </tr>
             </table>
           </div>
           <h2 class="rounded-top">Parent/Guardian Information</h2>
@@ -687,7 +665,7 @@
                     <option value="Online listings (Google, Yelp, Great Schools, etc.)">Online listings (Google, Yelp, Great Schools, etc.)</option>
                     <option value="Newspaper">Newspaper</option>
                     <option value="Referred by EEC/school family">Referred by EEC/school family</option>
-                    <option value="Referred by employee">Referred by FLCS employee</option>
+                    <option value="Referred by FLCS employee">Referred by FLCS employee</option>
                     <option value="Referred by alumni">Referred by alumni</option>
                     <option value="Referred by community partner">Referred by community partner</option>
                     <option value="Drove by">Drove by</option>
@@ -748,10 +726,9 @@
             <option value="none">None</option>
             <option value="waitlist">Waitlist</option>
             <option value="evaluation">Evaluation</option>
-            <option value="screeningEEC">Screening (EEC)</option>
-            <option value="screeningSchool">Screening (School)</option>
+            <option value="screening">Screening</option>
             <option value="acceptance">Acceptance</option>
-            <option value="acceptanceConditional">Acceptance (Conditional)</option>
+            <option value="acceptanceConditional">Acceptance - Conditional</option>
             <option value="rejection">Rejection</option>
             <option value="completion">Completion</option>
           </select>
@@ -783,7 +760,8 @@
           <h2 class="rounded-full">Form Type</h2>
           <label class="input-label" for="formSelect"><b>Select enrollment form:</b></label>
           <select class="column-select" style="margin-bottom: 20px" id="formSelect">
-            <option value="Admission Contract">Admission Contract</option>
+            <option value="Admission Contract (EEC)">Admission Contract (EEC)</option>
+            <option value="Admission Contract (School)">Admission Contract (School)</option>
             <option value="Tuition Payment Options">Tuition Payment Options</option>
             <option value="Medical Consent To Treat">Medical Consent To Treat</option>
             <option value="Student Emergency Contacts">Student Emergency Contacts</option>
