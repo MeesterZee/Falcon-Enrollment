@@ -1,4 +1,4 @@
-/** Falcon Enrollment - Web App v5.2 **/
+/** Falcon Enrollment - Web App v6.1 **/
 /** Falcon EDU © 2023-2026 All Rights Reserved **/
 /** Created by: Nick Zagorin **/
 
@@ -74,7 +74,7 @@ function getNavbar(activePage) {
 
       function showAbout() {
         const title = "<i class='bi bi-info-circle'></i>About Falcon Enrollment";
-        const message = "<b>Web App Version:</b> 5.2<br><b>Build:</b> 42.102825 <br><br>© 2023-2026 - All rights reserved";
+        const message = "<b>Web App Version:</b> 6.1<br><b>Build:</b> 44.010726 <br><br>© 2023-2026 - All rights reserved";
         showAlertModal(title, message, "Close");
       }
     </script>
@@ -130,24 +130,6 @@ function getSheetData(sheet) {
     }, {});
   });
 }
-
-/** Get ID cache
-function getIDCache() {
-  const sheets = [
-    STUDENT_DATA_SHEET
-  ];
-    
-  const ids = sheets.reduce((acc, sheet) => {
-    const lastRow = sheet.getLastRow();
-    if (lastRow > 1) {
-      const rangeValues = sheet.getRange(2, 1, lastRow - 1, 1).getDisplayValues();
-      acc.push(...rangeValues.flat());
-    }
-    return acc;
-  }, []);
-
-  return ids;
-}**/
 
 /** Get ID **/
 function getId(count = 1, sheetNames = [STUDENT_DATA_SHEET]) {
@@ -464,12 +446,12 @@ function createEmail(recipient, subject, body, attachments) {
 const COLS = {
   STATUS: 1,  // Column B
   STUDENT_NAME: 2, // Column C
-  EVALUATION_DATE: 20, // Column U
-  EVALUATION_FORM: 22, // Column W
-  SCREENING_DATE: 24, // Column Y
-  SCREENING_TIME: 25, // Column Z
-  SUBMISSION_DATE: 30, // Column AE
-  ACCEPTANCE_DATE: 32 // Column AG
+  EVALUATION_DATE: 19, // Column T
+  EVALUATION_FORM: 21, // Column V
+  SCREENING_DATE: 23, // Column X
+  SCREENING_TIME: 24, // Column Y
+  SUBMISSION_DATE: 28, // Column AC
+  ACCEPTANCE_DATE: 30 // Column AE
 };
 
 function getAllDates() {
@@ -479,6 +461,8 @@ function getAllDates() {
   // Filter for only active students before processing
   const rows = data.slice(1).filter(row => row[COLS.STATUS] === 'Active');
   
+  console.log(getAcceptanceDates(rows));
+
   return {
     evaluationDates: getEvaluationDates(rows),
     screeningDates: getScreeningDates(rows),
@@ -532,10 +516,10 @@ function getAcceptanceDates(rows) {
     rows
       .filter(row => row[COLS.ACCEPTANCE_DATE])
       .map(row => {
-        const documentStatus = row.slice(35, 44).map(status => 
+        const documentStatus = row.slice(33, 42).map(status => 
           status || "Status missing"
         );
-        
+
         return {
           student: row[COLS.STUDENT_NAME],
           date: row[COLS.ACCEPTANCE_DATE],
@@ -584,18 +568,9 @@ function getAppSettings() {
       schoolName: scriptProperties.getProperty('schoolName') || "",
       schoolYear: scriptProperties.getProperty('schoolYear') || (currentYear + '-' + (currentYear + 1))
     },
-    managerSettings: {
-      enrollmentManager1: scriptProperties.getProperty('enrollmentManager1') || "",
-      enrollmentManager2: scriptProperties.getProperty('enrollmentManager2') || "",
-      enrollmentManager3: scriptProperties.getProperty('enrollmentManager3') || "",
-      enrollmentManager4: scriptProperties.getProperty('enrollmentManager4') || "",
-      enrollmentManager5: scriptProperties.getProperty('enrollmentManager5') || ""
-    },
     feeSettings: {
-      developmentalScreeningEECFee: scriptProperties.getProperty('developmentalScreeningEECFee') || "",
-      developmentalScreeningSchoolFee: scriptProperties.getProperty('developmentalScreeningSchoolFee') || "",
-      academicScreeningFee: scriptProperties.getProperty('academicScreeningFee') || "",
       registrationFee: scriptProperties.getProperty('registrationFee') || "",
+      registrationFeeEEC: scriptProperties.getProperty('registrationFeeEEC') || "",
       hugFee: scriptProperties.getProperty('hugFee') || "",
       familyCommitmentFee: scriptProperties.getProperty('familyCommitmentFee') || "",
       flashFee: scriptProperties.getProperty('flashFee') || "",
@@ -618,13 +593,21 @@ function getAppSettings() {
         subject: scriptProperties.getProperty('emailTemplateScreeningSchoolSubject') || "",
         body: scriptProperties.getProperty('emailTemplateScreeningSchoolBody') || ""
       },
-      acceptance: {
-        subject: scriptProperties.getProperty('emailTemplateAcceptanceSubject') || "",
-        body: scriptProperties.getProperty('emailTemplateAcceptanceBody') || ""
+      acceptanceEEC: {
+        subject: scriptProperties.getProperty('emailTemplateAcceptanceEECSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateAcceptanceEECBody') || ""
       },
-      acceptanceConditional: {
-        subject: scriptProperties.getProperty('emailTemplateAcceptanceConditionalSubject') || "",
-        body: scriptProperties.getProperty('emailTemplateAcceptanceConditionalBody') || ""
+      acceptanceSchool: {
+        subject: scriptProperties.getProperty('emailTemplateAcceptanceSchoolSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateAcceptanceSchoolBody') || ""
+      },
+      acceptanceConditionalEEC: {
+        subject: scriptProperties.getProperty('emailTemplateAcceptanceConditionalEECSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateAcceptanceConditionalEECBody') || ""
+      },
+      acceptanceConditionalSchool: {
+        subject: scriptProperties.getProperty('emailTemplateAcceptanceConditionalSchoolSubject') || "",
+        body: scriptProperties.getProperty('emailTemplateAcceptanceConditionalSchoolBody') || ""
       },
       rejection: {
         subject: scriptProperties.getProperty('emailTemplateRejectionSubject') || "",
@@ -664,19 +647,10 @@ function writeSettings(userSettings, appSettings) {
       // School settings
       schoolName: appSettings.schoolSettings.schoolName,
       schoolYear: appSettings.schoolSettings.schoolYear,
-      
-      // Enrollment manager settings
-      enrollmentManager1: appSettings.managerSettings.enrollmentManager1,
-      enrollmentManager2: appSettings.managerSettings.enrollmentManager2,
-      enrollmentManager3: appSettings.managerSettings.enrollmentManager3, 
-      enrollmentManager4: appSettings.managerSettings.enrollmentManager4,
-      enrollmentManager5: appSettings.managerSettings.enrollmentManager5,
 
       // Fee settings
-      developmentalScreeningEECFee: appSettings.feeSettings.developmentalScreeningEECFee,
-      developmentalScreeningSchoolFee: appSettings.feeSettings.developmentalScreeningSchoolFee,
-      academicScreeningFee: appSettings.feeSettings.academicScreeningFee,
       registrationFee: appSettings.feeSettings.registrationFee,
+      registrationFeeEEC: appSettings.feeSettings.registrationFeeEEC,
       hugFee: appSettings.feeSettings.hugFee,
       familyCommitmentFee: appSettings.feeSettings.familyCommitmentFee,
       flashFee: appSettings.feeSettings.flashFee,
@@ -695,11 +669,17 @@ function writeSettings(userSettings, appSettings) {
       emailTemplateScreeningSchoolSubject: appSettings.emailTemplateSettings.screeningSchool.subject,
       emailTemplateScreeningSchoolBody: appSettings.emailTemplateSettings.screeningSchool.body,
 
-      emailTemplateAcceptanceSubject: appSettings.emailTemplateSettings.acceptance.subject,
-      emailTemplateAcceptanceBody: appSettings.emailTemplateSettings.acceptance.body,
+      emailTemplateAcceptanceEECSubject: appSettings.emailTemplateSettings.acceptanceEEC.subject,
+      emailTemplateAcceptanceEECBody: appSettings.emailTemplateSettings.acceptanceEEC.body,
 
-      emailTemplateAcceptanceConditionalSubject: appSettings.emailTemplateSettings.acceptanceConditional.subject,
-      emailTemplateAcceptanceConditionalBody: appSettings.emailTemplateSettings.acceptanceConditional.body,
+      emailTemplateAcceptanceSchoolSubject: appSettings.emailTemplateSettings.acceptanceSchool.subject,
+      emailTemplateAcceptanceSchoolBody: appSettings.emailTemplateSettings.acceptanceSchool.body,
+
+      emailTemplateAcceptanceConditionalEECSubject: appSettings.emailTemplateSettings.acceptanceConditionalEEC.subject,
+      emailTemplateAcceptanceConditionalEECBody: appSettings.emailTemplateSettings.acceptanceConditionalEEC.body,
+
+      emailTemplateAcceptanceConditionalSchoolSubject: appSettings.emailTemplateSettings.acceptanceConditionalSchool.subject,
+      emailTemplateAcceptanceConditionalSchoolBody: appSettings.emailTemplateSettings.acceptanceConditionalSchool.body,
       
       emailTemplateRejectionSubject: appSettings.emailTemplateSettings.rejection.subject,
       emailTemplateRejectionBody: appSettings.emailTemplateSettings.rejection.body,
