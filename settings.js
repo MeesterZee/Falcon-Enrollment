@@ -157,25 +157,15 @@
     document.getElementById('schoolName').value = APP_SETTINGS.schoolSettings.schoolName || '';
     document.getElementById('schoolYear').value = APP_SETTINGS.schoolSettings.schoolYear || '';
     
-    //Enrollment Managers
-    document.getElementById('managerName1').value = APP_SETTINGS.managerSettings.enrollmentManager1 || '';
-    document.getElementById('managerName2').value = APP_SETTINGS.managerSettings.enrollmentManager2 || '';
-    document.getElementById('managerName3').value = APP_SETTINGS.managerSettings.enrollmentManager3 || '';
-    document.getElementById('managerName4').value = APP_SETTINGS.managerSettings.enrollmentManager4 || '';
-    document.getElementById('managerName5').value = APP_SETTINGS.managerSettings.enrollmentManager5 || '';
-
-    //Screening Fees
-    document.getElementById('screeningFeeEEC').value = APP_SETTINGS.feeSettings.developmentalScreeningEECFee || '';
-    document.getElementById('screeningFeeTKK').value = APP_SETTINGS.feeSettings.developmentalScreeningSchoolFee || '';
-    document.getElementById('screeningFee18').value = APP_SETTINGS.feeSettings.academicScreeningFee || '';
-    
     //School Fees
     document.getElementById('registrationFee').value = APP_SETTINGS.feeSettings.registrationFee || '';
+    document.getElementById('registrationFeeEEC').value = APP_SETTINGS.feeSettings.registrationFeeEEC || '';
     document.getElementById('hugFee').value = APP_SETTINGS.feeSettings.hugFee || '';
     document.getElementById('familyCommitmentFee').value = APP_SETTINGS.feeSettings.familyCommitmentFee || '';
     document.getElementById('flashFee').value = APP_SETTINGS.feeSettings.flashFee || '';
     document.getElementById('withdrawalFee').value = APP_SETTINGS.feeSettings.withdrawalFee || '';
 
+    console.log(APP_SETTINGS.emailTemplateSettings);
     loadEmailTemplateSettings(APP_SETTINGS.emailTemplateSettings);
 
     console.log("Complete!");
@@ -217,15 +207,27 @@
         unsavedSubject: '',
         unsavedBody: ''
       },
-      acceptance: {
-        subject: emailTemplateSettings.acceptance.subject || '',
-        body: emailTemplateSettings.acceptance.body || '',
+      acceptanceEEC: {
+        subject: emailTemplateSettings.acceptanceEEC.subject || '',
+        body: emailTemplateSettings.acceptanceEEC.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
-      acceptanceConditional: {
-        subject: emailTemplateSettings.acceptanceConditional.subject || '',
-        body: emailTemplateSettings.acceptanceConditional.body || '',
+      acceptanceSchool: {
+        subject: emailTemplateSettings.acceptanceSchool.subject || '',
+        body: emailTemplateSettings.acceptanceSchool.body || '',
+        unsavedSubject: '',
+        unsavedBody: ''
+      },
+      acceptanceConditionalEEC: {
+        subject: emailTemplateSettings.acceptanceConditionalEEC.subject || '',
+        body: emailTemplateSettings.acceptanceConditionalEEC.body || '',
+        unsavedSubject: '',
+        unsavedBody: ''
+      },
+      acceptanceConditionalSchool: {
+        subject: emailTemplateSettings.acceptanceConditionalSchool.subject || '',
+        body: emailTemplateSettings.acceptanceConditionalSchool.body || '',
         unsavedSubject: '',
         unsavedBody: ''
       },
@@ -364,21 +366,10 @@
       schoolYear: document.getElementById('schoolYear').value
     };
 
-    // Get manager settings
-    const managerSettings = {
-      enrollmentManager1: document.getElementById('managerName1').value,
-      enrollmentManager2: document.getElementById('managerName2').value,
-      enrollmentManager3: document.getElementById('managerName3').value,
-      enrollmentManager4: document.getElementById('managerName4').value,
-      enrollmentManager5: document.getElementById('managerName5').value
-    };
-
     // Fee settings
     const feeSettings = {
-      developmentalScreeningEECFee: document.getElementById('screeningFeeEEC').value,
-      developmentalScreeningSchoolFee: document.getElementById('screeningFeeTKK').value,
-      academicScreeningFee: document.getElementById('screeningFee18').value,
       registrationFee: document.getElementById('registrationFee').value,
+      registrationFeeEEC: document.getElementById('registrationFeeEEC').value,
       hugFee: document.getElementById('hugFee').value,
       familyCommitmentFee: document.getElementById('familyCommitmentFee').value,
       flashFee: document.getElementById('flashFee').value,
@@ -411,13 +402,21 @@
         subject: EMAIL_TEMPLATE_SETTINGS.screeningSchool.subject,
         body: EMAIL_TEMPLATE_SETTINGS.screeningSchool.body
       },
-      acceptance: {
-        subject: EMAIL_TEMPLATE_SETTINGS.acceptance.subject,
-        body: EMAIL_TEMPLATE_SETTINGS.acceptance.body
+      acceptanceEEC: {
+        subject: EMAIL_TEMPLATE_SETTINGS.acceptanceEEC.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.acceptanceEEC.body
       },
-      acceptanceConditional: {
-        subject: EMAIL_TEMPLATE_SETTINGS.acceptanceConditional.subject,
-        body: EMAIL_TEMPLATE_SETTINGS.acceptanceConditional.body
+      acceptanceSchool: {
+        subject: EMAIL_TEMPLATE_SETTINGS.acceptanceSchool.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.acceptanceSchool.body
+      },
+      acceptanceConditionalEEC: {
+        subject: EMAIL_TEMPLATE_SETTINGS.acceptanceConditionalEEC.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.acceptanceConditionalEEC.body
+      },
+      acceptanceConditionalSchool: {
+        subject: EMAIL_TEMPLATE_SETTINGS.acceptanceConditionalSchool.subject,
+        body: EMAIL_TEMPLATE_SETTINGS.acceptanceConditionalSchool.body
       },
       rejection: {
         subject: EMAIL_TEMPLATE_SETTINGS.rejection.subject,
@@ -431,7 +430,6 @@
 
     return {
       schoolSettings,
-      managerSettings,
       feeSettings,
       emailTemplateSettings
     };
