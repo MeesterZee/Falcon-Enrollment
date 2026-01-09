@@ -191,6 +191,8 @@
   function writeAcceptanceDates(data) {
     const acceptanceDateList = document.getElementById('acceptanceDateList');
 
+    console.log(data);
+
     if (data.length === 0) {
       acceptanceDateList.innerHTML = `
         <div class="highlight-none">
