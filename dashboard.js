@@ -1,7 +1,7 @@
 <script type="text/javascript">
   const STUDENT_KEY_MAPPINGS = {
     // Basic information    
-    'gender': 'Gender', 'dateOfBirth': 'Date Of Birth', 'incomingGrade': 'Incoming Grade', 'gradeStatus': 'Grade Status', 'enrollmentManager': 'Enrollment Manager', 
+    'gender': 'Gender', 'dateOfBirth': 'Date Of Birth', 'incomingGrade': 'Incoming Grade', 'gradeStatus': 'Grade Status', 
     
     // Parent/guardian information
     'parentGuardianName': 'Parent/Guardian Name', 'parentGuardianPhone': 'Parent/Guardian Phone', 'parentGuardianEmail': 'Parent/Guardian Email',
@@ -29,7 +29,7 @@
     'contactedToSchedule': 'Contacted To Schedule', 'screeningDate': 'Screening Date', 'screeningTime': 'Screening Time', 'screeningEmail': 'Screening Email Sent', 
     
     // Student screening documents
-    'reportCard': 'Report Card', 'iepDocumentation': 'IEP Documentation', 'screeningFee': 'Screening Fee', 
+    'reportCard': 'Report Card', 'iepDocumentation': 'IEP Documentation',
     
     // Student acceptance
     'adminSubmissionDate': 'Admin Submission Date', 'adminAcceptance': 'Admin Acceptance', 'acceptanceDueDate': 'Acceptance Due Date', 'acceptanceEmail': 'Acceptance Email', 'familyAcceptance': 'Family Acceptance',
@@ -192,7 +192,7 @@
     });
 
     // Add event listeners for select boxes
-    const selectColorElements = document.querySelectorAll('#gender, #incomingGrade, #enrollmentManager, #gradeStatus, #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminAcceptance, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
+    const selectColorElements = document.querySelectorAll('#gender, #incomingGrade, #gradeStatus, #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningEmail, #reportCard, #iepDocumentation, #adminAcceptance, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
     const inputColorElements = document.querySelectorAll('#dateOfBirth, #parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail, #referredBy, #other, #evaluationDueDate, #screeningDate, #screeningTime, #adminSubmissionDate, #acceptanceDueDate');
     const noColorElements = document.querySelectorAll('#notes');
 
@@ -258,8 +258,8 @@
     const outreachInfoTable = document.getElementById('outreachInfoTable');
     const addOutreachInfoTable = document.getElementById('addOutreachInfoTable');
     const referralOptions = [
-      'Referred by EEC/school family',
-      'Referred by employee',
+      'Referred by First Lutheran School family',
+      'Referred by First Lutheran employee',
       'Referred by alumni',
       'Referred by community partner'
     ];
@@ -379,7 +379,6 @@
             'Date Of Birth',
             'Incoming Grade',
             'Grade Status',
-            'Enrollment Manager',
             'Parent/Guardian Name',
             'Parent/Guardian Phone',
             'Current School Name',
@@ -437,23 +436,6 @@
 
   function populateDashboard() {
     console.log("Populating dashboard...");
-
-    // Add enrollment manager options to dashboard and 'Add Student' modal
-    const enrollmentManagerSelect = document.getElementById('enrollmentManager');
-    const addEnrollmentManagerSelect = document.getElementById('addEnrollmentManager');
-    
-    // Iterate through enrollmentManager keys and populate select
-    for (let i = 1; i <= 5; i++) {
-      let key = `enrollmentManager${i}`;
-      let managerName = APP_SETTINGS.managerSettings[key];
-
-      if (managerName && managerName.trim() !== '') {
-        let option = document.createElement('option');
-        option.text = managerName;
-        enrollmentManagerSelect.add(option);
-        addEnrollmentManagerSelect.add(option.cloneNode(true));
-      }
-    }
 
     // Set initial values for Add modal select boxes
     addStudentModal.querySelectorAll('select').forEach(function(select) {
@@ -619,7 +601,6 @@
         'Date Of Birth': document.getElementById('addDateOfBirth').value,
         'Incoming Grade': document.getElementById('addIncomingGrade').value,
         'Grade Status': document.getElementById('addGradeStatus').value,
-        'Enrollment Manager': document.getElementById('addEnrollmentManager').value,
         'Parent/Guardian Name': document.getElementById('addParentGuardianName').value,
         'Parent/Guardian Phone': document.getElementById('addParentGuardianPhone').value,
         'Parent/Guardian Email': document.getElementById('addParentGuardianEmail').value,
@@ -648,7 +629,6 @@
         tempStudent['Date Of Birth'],
         tempStudent['Incoming Grade'],
         tempStudent['Grade Status'],
-        tempStudent['Enrollment Manager'],
         tempStudent['Parent/Guardian Name'],
         tempStudent['Parent/Guardian Phone'],
         tempStudent['Parent/Guardian Email'],
@@ -701,7 +681,6 @@
     const dateOfBirth = document.getElementById('addDateOfBirth').value;
     const incomingGrade = document.getElementById('addIncomingGrade').value;
     const gradeStatus = document.getElementById('addGradeStatus').value;
-    const enrollmentManager = document.getElementById('addEnrollmentManager').value;
     const parentGuardianName = document.getElementById('addParentGuardianName').value;
     const parentGuardianPhone = document.getElementById('addParentGuardianPhone').value;
     const parentGuardianEmail = document.getElementById('addParentGuardianEmail').value;
@@ -732,7 +711,7 @@
     // Define referral options
     const referralOptions = [
       'Referred by EEC/school family',
-      'Referred by employee',
+      'Referred by FLCS employee',
       'Referred by alumni',
       'Referred by community partner'
     ];
@@ -759,10 +738,6 @@
     }
     if (!gradeStatus) {
       showError("Error: MISSING_GRADE_STATUS");
-      return true;
-    }
-    if (!enrollmentManager) {
-      showError("Error: MISSING_ENROLLMENT_MANAGER");
       return true;
     }
     if (!parentGuardianName) {
@@ -849,7 +824,7 @@
     }
     
     if (removeStudentErrorCheck()) {
-        return;
+      return;
     }
 
     // Get student data
@@ -1294,8 +1269,13 @@
   }
 
   async function generateEnrollmentPacket() {
+    const enrolledInEEC = document.getElementById("enrolledInEEC").value;
+    const feeAmount = enrolledInEEC === 'Yes' 
+      ? APP_SETTINGS.feeSettings.registrationFeeEEC
+      : APP_SETTINGS.feeSettings.registrationFee;
+    
     // Get the document definitions for each PDF
-    const page1 = createAdmissionContract();
+    const page1 = createAdmissionContract(feeAmount);
     const page2 = createTuitionPaymentOptions();
     const page3 = createMedicalConsentToTreat();
     const page4 = createStudentEmergencyContacts();
@@ -1350,6 +1330,9 @@
     const subjectTemplate = document.getElementById('emailSubject');
     const bodyTemplate = document.getElementById('emailBody');
     
+    // Check EEC enrollment status to fetch correct template
+    const enrolledInEEC = document.getElementById("enrolledInEEC")?.value === 'Yes';
+
     // Reset template warning and scroll position
     document.getElementById('templateWarning').style.display = 'none';
     bodyTemplate.scrollTop = 0;
@@ -1376,33 +1359,44 @@
         bodyTemplate.innerHTML = getEmailBody(evaluationTemplate.body, mergeData);
         break;
 
-      case 'screeningEEC':      
-        const screeningEECTemplate = getTemplate('screeningEEC');
-        recipient.value = parentGuardianEmail;
-        subjectTemplate.value = screeningEECTemplate.subject;
-        bodyTemplate.innerHTML = getEmailBody(screeningEECTemplate.body, mergeData);
-        break;
+      case 'screening': {
+        const templateKey = enrolledInEEC
+          ? 'screeningEEC'
+          : 'screeningSchool';
 
-      case 'screeningSchool':      
-        const screeningSchoolTemplate = getTemplate('screeningSchool');
-        recipient.value = parentGuardianEmail;
-        subjectTemplate.value = screeningSchoolTemplate.subject;
-        bodyTemplate.innerHTML = getEmailBody(screeningSchoolTemplate.body, mergeData);
-        break;
+        const template = getTemplate(templateKey);
 
-      case 'acceptance':
-        const acceptanceTemplate = getTemplate('acceptance');
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = acceptanceTemplate.subject;
-        bodyTemplate.innerHTML = getEmailBody(acceptanceTemplate.body, mergeData);
+        subjectTemplate.value = template.subject;
+        bodyTemplate.innerHTML = getEmailBody(template.body, mergeData);
         break;
+      }
+
+      case 'acceptance': {
+        const templateKey = enrolledInEEC
+          ? 'acceptanceEEC'
+          : 'acceptanceSchool';
+
+        const template = getTemplate(templateKey);
+        
+        recipient.value = parentGuardianEmail;
+        subjectTemplate.value = template.subject;
+        bodyTemplate.innerHTML = getEmailBody(template.body, mergeData);
+        break;
+      }
       
-      case 'acceptanceConditional':
-        const acceptanceConditionalTemplate = getTemplate('acceptanceConditional');
+      case 'acceptanceConditional': {
+        const templateKey = enrolledInEEC
+          ? 'acceptanceConditionalEEC'
+          : 'acceptanceConditionalSchool';
+
+        const template = getTemplate(templateKey);
+        
         recipient.value = parentGuardianEmail;
-        subjectTemplate.value = acceptanceConditionalTemplate.subject;
-        bodyTemplate.innerHTML = getEmailBody(acceptanceConditionalTemplate.body, mergeData);
+        subjectTemplate.value = template.subject;
+        bodyTemplate.innerHTML = getEmailBody(template.body, mergeData);
         break;
+      }
       
       case 'rejection':
         const rejectionTemplate = getTemplate('rejection');
@@ -1459,36 +1453,7 @@
     let nameParts = studentName.match(/(.+),\s*(.+)/);
     let studentLastName = nameParts[1].trim();
     let studentFirstName = nameParts[2].trim();
-
-    // Set the screening type and fee based on grade level
     const incomingGrade = document.getElementById('incomingGrade').value;
-    const enrolledInEEC = document.getElementById('enrolledInEEC').value;
-    const developmentalScreeningFeeEEC = APP_SETTINGS.feeSettings.developmentalScreeningEECFee;
-    const developmentalScreeningFeeTKK = APP_SETTINGS.feeSettings.developmentalScreeningSchoolFee;
-    const academicScreeningFee = APP_SETTINGS.feeSettings.academicScreeningFee;
-    let screeningType;
-    let screeningFee;
-
-    if (!incomingGrade) {
-      screeningType = "";
-      screeningFee = "";
-    }
-    else if (incomingGrade === "Transitional Kindergarten" || incomingGrade === "Kindergarten") {
-      screeningType = "Developmental Screening";
-      if (!enrolledInEEC) {
-        screeningFee = "";
-      }
-      else if (enrolledInEEC === "Yes") {
-        screeningFee = developmentalScreeningFeeEEC;
-      }
-      else if (enrolledInEEC === "No") {
-        screeningFee = developmentalScreeningFeeTKK;
-      }
-    }
-    else {
-      screeningType = "Academic Screening";
-      screeningFee = academicScreeningFee;
-    }
 
     // Format evaluationDueDate
     const evaluationDueDate = document.getElementById('evaluationDueDate').value;
@@ -1514,11 +1479,11 @@
       gradeLevel: incomingGrade,
       teacherName: document.getElementById('currentTeacherName').value,
       evaluationDueDate: formattedEvaluationDueDate,
-      screeningType: screeningType, 
-      screeningFee: screeningFee,
       screeningDate: formattedScreeningDate,
       screeningTime: formattedScreeningTime,
-      acceptanceDueDate: formattedAcceptanceDueDate
+      acceptanceDueDate: formattedAcceptanceDueDate,
+      registrationFee: APP_SETTINGS.feeSettings.registrationFee,
+      registrationFeeEEC: APP_SETTINGS.feeSettings.registrationFeeEEC
     };
 
     const warningIcon = '<i class="bi-exclamation-triangle-fill" style="color: var(--warning-color)"></i>';
@@ -1585,10 +1550,18 @@
         let docDefinition, filename;
 
         switch (formType) {
-          case 'Admission Contract':
-            docDefinition = createAdmissionContract();
+          case 'Admission Contract (EEC)': {
+            const feeAmount = APP_SETTINGS.feeSettings.registrationFeeEEC;
+            docDefinition = createAdmissionContract(feeAmount);
             filename = 'Admission Contract.pdf';
             break;
+          }
+          case 'Admission Contract (School)': {
+            const feeAmount = APP_SETTINGS.feeSettings.registrationFee;
+            docDefinition = createAdmissionContract(feeAmount);
+            filename = 'Admission Contract.pdf';
+            break;
+          } 
           case 'Tuition Payment Options':
             docDefinition = createTuitionPaymentOptions();
             filename = 'Tuition Payment Options.pdf';
@@ -1789,8 +1762,8 @@
       discoveryMethodSelect.dispatchEvent(new Event('change'));
 
       const referralOptions = [
-        'Referred by EEC/school family',
-        'Referred by employee',
+        'Referred by First Lutheran School family',
+        'Referred by First Lutheran employee',
         'Referred by alumni',
         'Referred by community partner'
       ];
@@ -1903,12 +1876,6 @@
       case "Error: MISSING_GRADE_STATUS":
         title = warningIcon + "Missing Grade Status";
         message = "Please select a grade status and try again.";
-        button1 = "Close";
-        break;
-
-      case "Error: MISSING_ENROLLMENT_MANAGER":
-        title = warningIcon + "Missing Enrollment Manager";
-        message = "Please select an enrollment manager and try again.";
         button1 = "Close";
         break;
 
@@ -2181,7 +2148,7 @@
   }
 
   function updateColors() {
-    const selectColorElements = document.querySelectorAll('#gender, #dateOfBirth, #incomingGrade, #gradeStatus, #enrollmentManager, #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationDueDate, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningDate, #screeningTime, #screeningEmail, #reportCard, #iepDocumentation, #screeningFee, #adminSubmissionDate, #adminAcceptance, #acceptanceDueDate, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
+    const selectColorElements = document.querySelectorAll('#gender, #dateOfBirth, #incomingGrade, #gradeStatus,  #enrolledInEEC, #discoverFLS, #schoolTour, #discoveryMethod, #evaluationDueDate, #evaluationEmail, #evaluationForm, #contactedToSchedule, #screeningDate, #screeningTime, #screeningEmail, #reportCard, #iepDocumentation, #adminSubmissionDate, #adminAcceptance, #acceptanceDueDate, #acceptanceEmail, #familyAcceptance, #blackbaudAccount, #birthCertificatePassport, #immunizationRecords, #admissionContractForm, #tuitionPaymentForm, #medicalConsentForm, #emergencyContactsForm, #techConsentForm, #registrationFee');
     const inputColorElements = document.querySelectorAll('#parentGuardianName, #parentGuardianPhone, #parentGuardianEmail, #currentSchoolName, #currentTeacherName, #currentTeacherEmail, #referredBy, #other');
     const noColorElements = document.querySelectorAll('#notes');
 
