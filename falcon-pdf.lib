@@ -47,12 +47,16 @@
   // ADMISSION CONTRACT //
   ////////////////////////
 
-  function createAdmissionContract() {
+  function createAdmissionContract(feeAmount) {
     // Convert Registration Fee to float and perform calculations
-    const registrationFeeStr = APP_SETTINGS.feeSettings.registrationFee.replace('$', '');
-    const registrationFee = parseFloat(registrationFeeStr);
+    const registrationFee = Number(
+      feeAmount.replace(/[^0-9.]/g, '')
+    );
+
     const partialRegistrationFee = registrationFee / 2;
-    const formattedFee = `$${partialRegistrationFee.toFixed(2)}`;
+    const partialFeeAmount = `$${partialRegistrationFee.toFixed(2)}`;
+    
+    // Build the document
     const docDefinition = {
       pageSize: 'LETTER',
       pageOrientation: 'portrait',
@@ -75,8 +79,8 @@
         {
           ol: [
             { text: 'I agree to pay tuition charges, registration fees, applicable daycare program charges and other fees established by the First Lutheran School Board for the duration of enrollment. If, during enrollment, I wish to register, add or deduct daycare hours or discontinue daycare, I must notify both the FLASH program director or be responsible for the charges incurred. I agree to pay any fees incurred through Blackbaud Tuition Management for late or failed payments. I understand that the fees for registration and screenings for enrollment are non-refundable. Any deviation from the established payment schedule must be appealed in writing and approved by the FLS Managing Director. If I choose to withdraw my student(s), two weeks written notice is required. When the notice is given, a ' + APP_SETTINGS.feeSettings.withdrawalFee + ' withdrawal processing fee and any other fees owed will be subtracted from the unused paid tuition.', margin: [0, 0, 0, 5] },
-            { text: 'I agree to pay the annual Help Us Grow (HUG) building fee of ' + APP_SETTINGS.feeSettings.hugFee + ' per family.', margin: [0, 0, 0, 5] },
-            { text: 'I agree to pay the annual Family Commitment Fee (FCF) of ' + APP_SETTINGS.feeSettings.familyCommitmentFee + ' or to work the appropriate number of hours as delineated by the First Lutheran School Board policy.', margin: [0, 0, 0, 5] },
+            { text: 'I agree to pay the annual Help Us Grow (HUG) building fee per family.', margin: [0, 0, 0, 5] },
+            { text: 'I agree to pay the annual Family Commitment Fee (FCF) or to work the appropriate number of hours as delineated by the First Lutheran School Board policy.', margin: [0, 0, 0, 5] },
             { text: 'I understand that as a condition of continued attendance each student is required to abide by school regulations as explained in the First Lutheran Parent Handbook and/or as presented by the teachers and administration.', margin: [0, 0, 0, 5] },
             { text: 'I understand this contract begins continual enrollment that ends at any of the following:' },
             {
@@ -92,7 +96,7 @@
         {
           start: 6, // Explicitly set numbering to continue after ul
           ol: [
-            { text: 'I understand that by signing this contract my Blackbaud Tuition Management account will be invoiced ' + formattedFee + ' each April and ' + formattedFee + ' each June (for a total of ' + APP_SETTINGS.feeSettings.registrationFee + ' per student) for the annual registration fee. If I choose not to continue the following year, I understand I need to let the school office know in writing by March 10th in order to avoid being charged the registration fee for the coming year. After March 10th, the registration fee is non-refundable. If a written notice to withdraw is not received, I understand my Blackbaud Tuition account will still be invoiced ' + formattedFee + ' in April.', margin: [0, 0, 0, 5] },
+            { text: 'I understand that by signing this contract my Blackbaud Tuition Management account will be invoiced ' + partialFeeAmount + ' each April and ' + partialFeeAmount + ' each June (for a total of ' + feeAmount + ' per student) for the annual registration fee. If I choose not to continue the following year, I understand I need to let the school office know in writing by March 10th in order to avoid being charged the registration fee for the coming year. After March 10th, the registration fee is non-refundable. If a written notice to withdraw is not received, I understand my Blackbaud Tuition account will still be invoiced ' + partialFeeAmount + ' in April.', margin: [0, 0, 0, 5] },
             { text: 'I understand that the first tuition payment is due August 10th and the last tuition payment is due May 10th each school year. Other fees including but not limited to hourly daycare and field trip fees may be due June 10th or July 10th.', margin: [0, 0, 0, 5] }
           ]
         },
