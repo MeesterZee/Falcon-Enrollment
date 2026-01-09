@@ -172,64 +172,6 @@
               </tr>
             </table>
           </div>
-          <h2 class="rounded-top">Enrollment Managers</h2>
-          <div class="no-header-table-wrapper">
-            <table class="no-header-table">
-              <tr>
-                <td>Manager name:</td>
-                <td>
-                  <input class="table-input" type="text" id="managerName1">
-                </td>
-              </tr>
-              <tr>
-                <td>Manager name:</td>
-                <td>
-                  <input class="table-input" type="text" id="managerName2">
-                </td>
-              </tr>
-              <tr>
-                <td>Manager name:</td>
-                <td>
-                  <input class="table-input" type="text" id="managerName3">
-                </td>
-              </tr>
-              <tr>
-                <td>Manager name:</td>
-                <td>
-                  <input class="table-input" type="text" id="managerName4">
-                </td>
-              </tr>
-              <tr>
-                <td>Manager name:</td>
-                <td>
-                  <input class="table-input" type="text" id="managerName5">
-                </td>
-              </tr>
-            </table>
-          </div>
-          <h2 class="rounded-top">Screening Fees</h2>
-          <div class="no-header-table-wrapper">
-            <table class="no-header-table">
-              <tr>
-                <td>Developmental screening fee (EEC):</td>
-                <td>
-                  <input class="table-input" type="text" data-type="currency" id="screeningFeeEEC">
-                </td>
-              </tr>
-              <tr>
-                <td>Developmental screening fee (TK/K):</td>
-                <td>
-                  <input class="table-input" type="text" data-type="currency" id="screeningFeeTKK">
-                </td>
-              </tr>
-              <tr>
-                <td>Academic screening fee:</td>
-                <td>
-                  <input class="table-input" type="text" data-type="currency" id="screeningFee18">
-                </td>
-              </tr>
-            </table>
-          </div>
           <h2 class="rounded-top">School Fees</h2>
           <div class="no-header-table-wrapper" style="margin-bottom: 0">
             <table class="no-header-table">
@@ -237,6 +179,12 @@
                 <td>Registration fee:</td>
                 <td>
                   <input class="table-input" type="text" data-type="currency" id="registrationFee">
+                </td>
+              </tr>
+              <tr>
+                <td>Registration fee (EEC):</td>
+                <td>
+                  <input class="table-input" type="text" data-type="currency" id="registrationFeeEEC">
                 </td>
               </tr>
               <tr>
@@ -278,8 +226,10 @@
           <option value="evaluation">Evaluation</option>
           <option value="screeningEEC">Screening (EEC)</option>
           <option value="screeningSchool">Screening (School)</option>
-          <option value="acceptance">Acceptance</option>
-          <option value="acceptanceConditional">Acceptance (Conditional)</option>
+          <option value="acceptanceEEC">Acceptance (EEC)</option>
+          <option value="acceptanceSchool">Acceptance (School)</option>
+          <option value="acceptanceConditionalEEC">Acceptance - Conditional (EEC)</option>
+          <option value="acceptanceConditionalSchool">Acceptance - Conditional (School)</option>
           <option value="rejection">Rejection</option>
           <option value="completion">Completion</option>
         </select>
