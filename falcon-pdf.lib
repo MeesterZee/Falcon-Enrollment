@@ -1,4 +1,4 @@
-<!-- PDF Make v0.2.12 -->
+<!-- PDF Make v0.3.4 -->
 <!-- Sizing in points, 1 inch = 72 points -->
 
 <script>
@@ -60,7 +60,7 @@
     const docDefinition = {
       pageSize: 'LETTER',
       pageOrientation: 'portrait',
-      pageMargins: [36, 0, 36, 36], // left, top, right, bottom
+      pageMargins: [36, 110, 36, 36], // left, top, right, bottom
       header: function(currentPage, pageCount, pageSize) {
         return FORM_HEADER;
       },
@@ -195,10 +195,10 @@
           fontSize: 12,
           bold: true,
           alignment: 'center',
-          margin: [0, 116, 0, 10]
+          margin: [0, 10, 0, 10]
         },
       },
-      images: { logo: { url: FORM_LOGO } }
+      images: { logo: FORM_LOGO }
     };
 
     return docDefinition;
@@ -212,7 +212,7 @@
     const docDefinition = {
       pageSize: 'LETTER',
       pageOrientation: 'portrait',
-      pageMargins: [36, 0, 36, 36],
+      pageMargins: [36, 110, 36, 36], // left, top, right, bottom
       header: function(currentPage, pageCount, pageSize) {
         return FORM_HEADER;
       },
@@ -414,10 +414,10 @@
           fontSize: 12,
           bold: true,
           alignment: 'center',
-          margin: [0, 116, 0, 10]
+          margin: [0, 10, 0, 10]
         },
       },
-      images: { logo: { url: FORM_LOGO } }
+      images: { logo: FORM_LOGO }
     };
 
     return docDefinition;
@@ -431,7 +431,7 @@
     const docDefinition = {
       pageSize: 'LETTER',
       pageOrientation: 'portrait',
-      pageMargins: [36, 0, 36, 36],
+      pageMargins: [36, 110, 36, 36], // left, top, right, bottom
       header: function(currentPage, pageCount, pageSize) {
         return FORM_HEADER;
       },
@@ -560,10 +560,10 @@
           fontSize: 12,
           bold: true,
           alignment: 'center',
-          margin: [0, 116, 0, 10]
+          margin: [0, 10, 0, 10]
         },
       },
-      images: { logo: { url: FORM_LOGO } }
+      images: { logo: FORM_LOGO }
     };
 
     return docDefinition;
@@ -577,7 +577,7 @@
     const docDefinition = {
       pageSize: 'LETTER',
       pageOrientation: 'portrait',
-      pageMargins: [36, 0, 36, 36],
+      pageMargins: [36, 110, 36, 36], // left, top, right, bottom
       header: function(currentPage, pageCount, pageSize) {
         return FORM_HEADER;
       },
@@ -723,10 +723,10 @@
           fontSize: 12,
           bold: true,
           alignment: 'center',
-          margin: [0, 116, 0, 10]
+          margin: [0, 10, 0, 10]
         },
       },
-      images: { logo: { url: FORM_LOGO } }
+      images: { logo: FORM_LOGO }
     };
 
     return docDefinition;
@@ -740,7 +740,7 @@
     const docDefinition = {
       pageSize: 'LETTER',
       pageOrientation: 'portrait',
-      pageMargins: [36, 0, 36, 36],
+      pageMargins: [36, 110, 36, 36], // left, top, right, bottom
       header: function(currentPage, pageCount, pageSize) {
         return FORM_HEADER;
       },
@@ -859,10 +859,10 @@
           fontSize: 12,
           bold: true,
           alignment: 'center',
-          margin: [0, 116, 0, 10]
+          margin: [0, 10, 0, 10]
         },
       },
-      images: { logo: { url: FORM_LOGO } }
+      images: { logo: FORM_LOGO }
     };
 
     return docDefinition;
@@ -876,7 +876,7 @@
     const docDefinition = {
       pageSize: 'LETTER',
       pageOrientation: 'portrait',
-      pageMargins: [36, 0, 36, 36],
+      pageMargins: [36, 110, 36, 36], // left, top, right, bottom
       header: function(currentPage, pageCount, pageSize) {
         return FORM_HEADER;
       },
@@ -950,10 +950,10 @@
           fontSize: 12,
           bold: true,
           alignment: 'center',
-          margin: [0, 116, 0, 10]
+          margin: [0, 10, 0, 10]
         },
       },
-      images: { logo: { url: FORM_LOGO } }
+      images: { logo: FORM_LOGO }
     };
 
     return docDefinition;
