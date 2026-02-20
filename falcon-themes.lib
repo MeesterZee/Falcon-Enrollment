@@ -16,6 +16,7 @@
     --menu-icon-color: black;
     --element-background-color: white;
     --element-accent-color: #e0e0e0; /* Gray 300 */
+    --toast-background-color: white;
     --text-primary-color: black;
     --text-accent-color: #757575; /* Gray 600 */ 
     --warning-color: #ff9800; /* Orange 500 */
@@ -37,6 +38,7 @@
     --menu-icon-color: white;
     --element-background-color: #121212; /* Gray Custom */
     --element-accent-color: #424242; /* Gray 800 */
+    --toast-background-color: #212121;
     --text-primary-color: white;
     --text-accent-color: #bdbdbd; /* Gray 400 */
     --warning-color: #ff9800; /* Orange 500 */
@@ -58,6 +60,7 @@
     --menu-icon-color: white;
     --element-background-color: #121212; /* Gray Custom */
     --element-accent-color: #424242; /* Gray 800 */
+    --toast-background-color: #212121;
     --text-primary-color: white;
     --text-accent-color: #bdbdbd; /* Gray 400 */    
     --warning-color: #ff9800; /* Orange 500 */
@@ -69,7 +72,7 @@
     --pink: #880e4f; /* Pink 900 */
     --gray: #616161; /* Gray 700 */
   }
-  
+
   :root.Purple-Lightning {
     color-scheme: dark;
     --primary-color: #6200ea; /* Deep Purple A700 */
@@ -79,6 +82,7 @@
     --menu-icon-color: white;
     --element-background-color: #121212; /* Gray Custom */
     --element-accent-color: #424242; /* Gray 800 */
+    --toast-background-color: #212121;
     --text-primary-color: white;
     --text-accent-color: #bdbdbd; /* Gray 400 */    
     --warning-color: #ff9800; /* Orange 500 */
@@ -100,6 +104,7 @@
     --menu-icon-color: black;
     --element-background-color: white;
     --element-accent-color: #e0e0e0; /* Gray 300 */
+    --toast-background-color: #eceff1;
     --text-primary-color: black;
     --text-accent-color: #757575; /* Gray 600 */ 
     --warning-color: #ff9800; /* Orange 500 */
@@ -121,6 +126,7 @@
     --menu-icon-color: black;
     --element-background-color: white;
     --element-accent-color: #e0e0e0; /* Gray 300 */
+    --toast-background-color: #FFF8E1;
     --text-primary-color: black;
     --text-accent-color: #757575; /* Gray 600 */ 
     --warning-color: #ff9800; /* Orange 500 */
