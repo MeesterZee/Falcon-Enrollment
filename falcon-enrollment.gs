@@ -1,4 +1,4 @@
-/** Falcon Enrollment - Web App v6.1 **/
+/** Falcon Enrollment - Web App v6.3.1 **/
 /** Falcon EDU © 2023-2026 All Rights Reserved **/
 /** Created by: Nick Zagorin **/
 
@@ -74,7 +74,7 @@ function getNavbar(activePage) {
 
       function showAbout() {
         const title = "<i class='bi bi-info-circle'></i>About Falcon Enrollment";
-        const message = "<b>Web App Version:</b> 6.1<br><b>Build:</b> 44.010726 <br><br>© 2023-2026 - All rights reserved";
+        const message = "<b>Web App Version:</b> 6.3.1<br><b>Build:</b> 52.022026 <br><br>© 2023-2026 - All rights reserved";
         showAlertModal(title, message, "Close");
       }
     </script>
