@@ -1261,8 +1261,7 @@
           })
         .createEmail(recipient, subject, body, attachments);
       } catch (error) {
-        showError(error.message);
-        //showError("Error: EMAIL_FAILURE");
+        showError("Error: EMAIL_FAILURE");
         busyFlag = false;
       }
     };
@@ -1306,17 +1305,13 @@
     };
 
     // Use async/await for PDF generation and sending the email
-    return new Promise((resolve, reject) => {
-      pdfMake.createPdf(docDefinition).getBlob((blob) => {
-        blob.arrayBuffer()
-          .then(arrayBuffer => {
-            const uint8Array = new Uint8Array(arrayBuffer);
-            const byteArray = Array.from(uint8Array);
-            resolve(byteArray);
-          })
-          .catch(reject);
-      });
-    });
+    const blob = await pdfMake.createPdf(docDefinition).getBlob();
+
+    const arrayBuffer = await blob.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // return raw byte array (Apps Script / email-safe)
+    return Array.from(uint8Array);
   }  
 
   function getEmailTemplate() {
@@ -1586,11 +1581,13 @@
 
         const pdfDoc = pdfMake.createPdf(docDefinition);
 
-        pdfDoc.download(filename, () => {
-          // Callback runs *after* download is triggered
-          busyFlag = false;
+        pdfDoc.download(filename)
+        .then(() => {
           playNotificationSound("success");
           showToast("", "Form exported successfully!", 5000);
+        })
+        .finally(() => {
+          busyFlag = false;
         });
       }, 100);
     };
@@ -1603,6 +1600,11 @@
   function exportData() {
     if (busyFlag) {
       showError("Error: OPERATION_IN_PROGRESS");
+      return;
+    }
+
+    if (!saveFlag) {
+      showError("Error: UNSAVED_CHANGES");
       return;
     }
     
@@ -1812,6 +1814,8 @@
   }
 
   function saveAlert() {
+    const saveChangesButton = document.getElementById("saveChangesButton");
+    
     saveFlag = false;
     saveChangesButton.classList.add('tool-bar-button-unsaved');
   }
