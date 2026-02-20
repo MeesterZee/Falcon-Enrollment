@@ -486,6 +486,8 @@
   }
   
   function saveAlert() {
+    const saveChangesButton = document.getElementById("saveChangesButton");
+
     saveFlag = false;
     saveChangesButton.classList.add('tool-bar-button-unsaved');
   }
